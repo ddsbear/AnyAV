@@ -48,6 +48,13 @@
             android:onClick="ScreenRecord"
             android:text="录屏"
             android:textAllCaps="false" />
+
+        <Button
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:onClick="opengl"
+            android:text="opengl"
+            android:textAllCaps="false" />
     </LinearLayout>
 
 

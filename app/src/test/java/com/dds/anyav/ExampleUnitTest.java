@@ -1,4 +1,4 @@
-package com.dds.avdemo;
+package com.dds.anyav;
 
 import org.junit.Test;
 

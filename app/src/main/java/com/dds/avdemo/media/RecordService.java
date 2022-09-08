@@ -11,10 +11,12 @@ import android.media.projection.MediaProjectionManager;
 import android.os.Build;
 import android.os.Environment;
 import android.os.IBinder;
-import android.support.annotation.RequiresApi;
+
 import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.WindowManager;
+
+import androidx.annotation.RequiresApi;
 
 import java.io.File;
 import java.io.IOException;

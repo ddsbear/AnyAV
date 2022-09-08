@@ -4,8 +4,10 @@ import android.content.Intent;
 import android.graphics.SurfaceTexture;
 import android.hardware.Camera;
 import android.os.Bundle;
-import android.support.v7.app.AppCompatActivity;
+
 import android.view.TextureView;
+
+import androidx.appcompat.app.AppCompatActivity;
 
 import com.dds.avdemo.R;
 
