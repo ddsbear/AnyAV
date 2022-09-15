@@ -6,6 +6,7 @@ import android.opengl.GLSurfaceView;
 
 import com.dds.avdemo.opegl.base.BaseGLSurfaceView;
 import com.dds.avdemo.opegl.image.ImageRenderer;
+import com.dds.avdemo.opegl.image.ImageTransformRenderer;
 
 import java.io.IOException;
 
@@ -19,7 +20,7 @@ public class ImageGLSurfaceView extends BaseGLSurfaceView {
 
         setRenderer(new ImageRenderer(context));  // 展示图片渲染器
 
-        // setRenderer(new ImageTransformRenderer(context, ImageTransformRenderer.Filter.MAGN));  // 展示图片处理渲染器
+//         setRenderer(new ImageTransformRenderer(context, ImageTransformRenderer.Filter.MAGN));  // 展示图片处理渲染器
 
         setRenderMode(GLSurfaceView.RENDERMODE_WHEN_DIRTY);
 

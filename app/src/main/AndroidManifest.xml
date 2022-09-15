@@ -38,7 +38,12 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <activity android:name=".audio.AudioActivity" />
+        <activity android:name=".audio.AudioActivity"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+            </intent-filter>
+        </activity>
         <activity android:name=".video.VideoActivity" />
         <activity android:name=".video.SurfaceViewActivity" />
         <activity android:name=".video.TextureViewActivity" />

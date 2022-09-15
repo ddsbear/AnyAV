@@ -15,9 +15,12 @@ import com.dds.avdemo.media.MediaActivity;
 import com.dds.avdemo.media.MediaCodecActivity;
 import com.dds.avdemo.media.RecordActivity;
 import com.dds.avdemo.opegl.camera.preview.PreviewCameraActivity;
+import com.dds.avdemo.opegl.glsv.ImageGLSurfaceView;
 import com.dds.avdemo.permission.Consumer;
 import com.dds.avdemo.permission.Permissions;
 import com.dds.avdemo.video.VideoActivity;
+
+import java.io.IOException;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -76,9 +79,13 @@ public class MainActivity extends AppCompatActivity {
 
         // setContentView(new RotateTriangleGLSurfaceView(this)); // 旋转三角形
 
-        // setContentView(new ImageGLSurfaceView(this)); // 加载图片
+        try {
+            setContentView(new ImageGLSurfaceView(this)); // 加载图片
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
 
-         startActivity(new Intent(this, PreviewCameraActivity.class));  // OpenGL预览摄像头
+//         startActivity(new Intent(this, PreviewCameraActivity.class));  // OpenGL预览摄像头
 
 //        startActivity(new Intent(this, TakePictureActivity.class));  // OpenGL 拍照
 
