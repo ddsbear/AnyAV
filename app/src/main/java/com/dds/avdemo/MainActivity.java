@@ -19,6 +19,7 @@ import com.dds.avdemo.opegl.glsv.ImageGLSurfaceView;
 import com.dds.avdemo.permission.Consumer;
 import com.dds.avdemo.permission.Permissions;
 import com.dds.avdemo.video.VideoActivity;
+import com.dds.gles.OpenGLActivity;
 
 import java.io.IOException;
 
@@ -35,8 +36,8 @@ public class MainActivity extends AppCompatActivity {
                 Manifest.permission.CAMERA}, new Consumer<Integer>() {
             @Override
             public void accept(Integer integer) {
-                if(integer != 0){
-                    Toast.makeText(MainActivity.this,"请给权限",Toast.LENGTH_LONG).show();
+                if (integer != 0) {
+                    Toast.makeText(MainActivity.this, "请给权限", Toast.LENGTH_LONG).show();
                 }
 
             }
@@ -79,15 +80,17 @@ public class MainActivity extends AppCompatActivity {
 
         // setContentView(new RotateTriangleGLSurfaceView(this)); // 旋转三角形
 
-        try {
-            setContentView(new ImageGLSurfaceView(this)); // 加载图片
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+//        try {
+//            setContentView(new ImageGLSurfaceView(this)); // 加载图片
+//        } catch (IOException e) {
+//            e.printStackTrace();
+//        }
 
 //         startActivity(new Intent(this, PreviewCameraActivity.class));  // OpenGL预览摄像头
 
 //        startActivity(new Intent(this, TakePictureActivity.class));  // OpenGL 拍照
+
+        startActivity(new Intent(this, OpenGLActivity.class));
 
     }
 }

@@ -20,9 +20,9 @@ public class TriangleGLSurfaceView extends BaseGLSurfaceView {
     public TriangleGLSurfaceView(Context context) {
         super(context);
 
-//         setRenderer(new TriangleRenderer()); // 绘制三角形
+         setRenderer(new TriangleRenderer()); // 绘制三角形
 //         setRenderer(new CameraTriangleRenderer()); // 绘制摄像机下的三角形
-        setRenderer(new ColorfulTriangleRenderer()); // 绘制摄像机下的彩色三角形
+//        setRenderer(new ColorfulTriangleRenderer()); // 绘制摄像机下的彩色三角形
     }
 
     class TriangleRenderer implements Renderer {
