@@ -1,4 +1,4 @@
-package com.dds.gles;
+package com.dds.gles.utils;
 
 import android.content.Context;
 

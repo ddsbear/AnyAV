@@ -1,10 +1,11 @@
-package com.dds.gles;
+package com.dds.gles.utils;
 
 import android.opengl.GLES20;
 import android.util.Log;
 
 public class ProgramUtil {
     private static final String TAG = "ProgramUtil";
+
     public static String SHADER_VERTEX =
             "attribute vec4 vPosition;\n" +
                     "void main(){\n" +

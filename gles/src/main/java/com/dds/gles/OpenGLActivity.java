@@ -5,6 +5,8 @@ import androidx.appcompat.app.AppCompatActivity;
 import android.opengl.GLSurfaceView;
 import android.os.Bundle;
 
+import com.dds.gles.render.triangle.TriangleRenderer;
+
 public class OpenGLActivity extends AppCompatActivity {
     private GLSurfaceView surfaceView;
 
@@ -16,9 +18,21 @@ public class OpenGLActivity extends AppCompatActivity {
 
         surfaceView.setEGLContextClientVersion(3);
 
-        surfaceView.setRenderer(new MyRenderer());
+        surfaceView.setRenderer(new TriangleRenderer());
 
         surfaceView.setRenderMode(GLSurfaceView.RENDERMODE_CONTINUOUSLY);
 
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        surfaceView.onPause();
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        surfaceView.onResume();
     }
 }

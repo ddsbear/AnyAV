@@ -1,8 +1,10 @@
-package com.dds.gles;
+package com.dds.gles.render.triangle;
 
 import android.opengl.GLES20;
 import android.opengl.GLSurfaceView;
 import android.util.Log;
+
+import com.dds.gles.utils.ProgramUtil;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
@@ -11,7 +13,7 @@ import java.nio.FloatBuffer;
 import javax.microedition.khronos.egl.EGLConfig;
 import javax.microedition.khronos.opengles.GL10;
 
-public class MyRenderer implements GLSurfaceView.Renderer {
+public class TriangleRenderer implements GLSurfaceView.Renderer {
     private static final String TAG = "MyRenderer";
     int mProgram;
     FloatBuffer vertexBuffer;
