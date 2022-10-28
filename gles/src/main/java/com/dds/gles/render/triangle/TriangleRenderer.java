@@ -13,10 +13,26 @@ import java.nio.FloatBuffer;
 import javax.microedition.khronos.egl.EGLConfig;
 import javax.microedition.khronos.opengles.GL10;
 
+
+/**
+ *  draw a normal triangle
+ */
 public class TriangleRenderer implements GLSurfaceView.Renderer {
     private static final String TAG = "MyRenderer";
     int mProgram;
     FloatBuffer vertexBuffer;
+
+    public static String SHADER_VERTEX =
+            "attribute vec4 vPosition;\n" +
+                    "void main(){\n" +
+                    "   gl_Position = vPosition;\n" +
+                    "}";
+    public static String SHADER_FRAGMENT =
+            "precision mediump float;\n" +
+                    "uniform vec4 vColor;\n" +
+                    "void main(){\n" +
+                    "   gl_FragColor = vColor;\n" +
+                    "}";
 
     public static float triangleCoordinates[] = {
             0.5f, 0.5f, 0f,
@@ -42,7 +58,7 @@ public class TriangleRenderer implements GLSurfaceView.Renderer {
             return;
         }
         // 将着色器的代码放入着色器中
-        GLES20.glShaderSource(v_shader, ProgramUtil.SHADER_VERTEX);
+        GLES20.glShaderSource(v_shader, SHADER_VERTEX);
         // 编译着色器
         GLES20.glCompileShader(v_shader);
 
@@ -52,7 +68,7 @@ public class TriangleRenderer implements GLSurfaceView.Renderer {
             Log.d(TAG, "onSurfaceCreated: f_shader is 0");
             return;
         }
-        GLES20.glShaderSource(f_shader, ProgramUtil.SHADER_FRAGMENT);
+        GLES20.glShaderSource(f_shader, SHADER_FRAGMENT);
         GLES20.glCompileShader(f_shader);
 
         // 创建program,并链接着色器
