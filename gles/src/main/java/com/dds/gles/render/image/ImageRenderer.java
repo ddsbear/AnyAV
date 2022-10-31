@@ -155,7 +155,7 @@ public class ImageRenderer implements GLSurfaceView.Renderer {
 
 
         GLES20.glDisableVertexAttribArray(vPosition);
-
+        GLES20.glDisableVertexAttribArray(vCoordinate);
     }
 
 
