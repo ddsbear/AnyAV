@@ -17,8 +17,11 @@ public class OpenGLActivity extends AppCompatActivity {
         setContentView(R.layout.activity_open_glactivity);
         surfaceView = findViewById(R.id.gl_surface);
         surfaceView.setEGLContextClientVersion(3);
+
+        // 画一个三角形
 //        surfaceView.setRenderer(new TriangleRenderer());
 
+        // 画一张图片
 //        try {
 //            Bitmap bitmap = BitmapFactory.decodeStream(this.getResources().getAssets().open("image.webp"));
 //            surfaceView.setRenderer(new ImageRenderer(bitmap));  // 展示图片渲染器
@@ -28,6 +31,7 @@ public class OpenGLActivity extends AppCompatActivity {
 //        }
 //        surfaceView.setRenderMode(GLSurfaceView.RENDERMODE_CONTINUOUSLY);
 
+        // 摄像头纹理
         surfaceView.setRenderer(new CameraPreViewRenderer(this));
 
     }

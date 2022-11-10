@@ -141,7 +141,6 @@ public class ImageRenderer implements GLSurfaceView.Renderer {
 
         GLES20.glActiveTexture(GLES20.GL_TEXTURE0);
         GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, texture1);
-
         GLES20.glUniform1i(vTexture, 0);
 
 
