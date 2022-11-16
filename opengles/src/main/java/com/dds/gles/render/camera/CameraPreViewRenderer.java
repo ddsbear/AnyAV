@@ -96,10 +96,17 @@ public class CameraPreViewRenderer implements GLSurfaceView.Renderer {
     public void onSurfaceChanged(GL10 gl, int width, int height) {
         GLES20.glViewport(0, 0, width, height);
 
+        // 正交投影
+        Matrix.orthoM(mProjectMatrix, 0, -1, 1, -1, 1, 1, 3);
 
-//        Matrix.orthoM(mProjectMatrix, 0, -1, 1, -1, 1, 1, 3);
-//        Matrix.setLookAtM(mViewMatrix, 0, 0, 0, 1f, 0f, 0f, 0f, 0f, 1.0f, 0.0f);
-//        Matrix.multiplyMM(mMVPMatrix, 0, mProjectMatrix, 0, mViewMatrix, 0);
+        // 透视投影
+//        Matrix.perspectiveM(mProjectMatrix,0,0,0,1,3);
+
+
+        Matrix.setLookAtM(mViewMatrix, 0, 0, 0, 1f, 0f, 0f, 0f, 0f, 1.0f, 0.0f);
+
+
+        Matrix.multiplyMM(mMVPMatrix, 0, mProjectMatrix, 0, mViewMatrix, 0);
 
 
         // flip
@@ -118,7 +125,6 @@ public class CameraPreViewRenderer implements GLSurfaceView.Renderer {
 
         // 设置矩阵
         GLES20.glUniformMatrix4fv(vMatrix, 1, false, mMVPMatrix, 0);
-
         // bindTexture
         GLES20.glActiveTexture(GLES20.GL_TEXTURE0);
         GLES20.glBindTexture(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, textureId);

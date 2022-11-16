@@ -451,10 +451,10 @@ public class GLTextureView extends TextureView implements TextureView.SurfaceTex
     }
 
     /**
-     * Queue a runnable to be run on the GL rendering thread. This can be used
+     * Queue a runnable to be runDraw on the GL rendering thread. This can be used
      * to communicate with the Renderer on the rendering thread.
      * Must not be called before a renderer has been set.
-     * @param r the runnable to be run on the GL rendering thread.
+     * @param r the runnable to be runDraw on the GL rendering thread.
      */
     public void queueEvent(Runnable r) {
         mGLThread.queueEvent(r);
@@ -1529,8 +1529,8 @@ public class GLTextureView extends TextureView implements TextureView.SurfaceTex
         }
 
         /**
-         * Queue an "event" to be run on the GL rendering thread.
-         * @param r the runnable to be run on the GL rendering thread.
+         * Queue an "event" to be runDraw on the GL rendering thread.
+         * @param r the runnable to be runDraw on the GL rendering thread.
          */
         public void queueEvent(Runnable r) {
             if (r == null) {
@@ -1672,7 +1672,7 @@ public class GLTextureView extends TextureView implements TextureView.SurfaceTex
         public synchronized boolean shouldReleaseEGLContextWhenPausing() {
             // Release the EGL context when pausing even if
             // the hardware supports multiple EGL contexts.
-            // Otherwise the device could run out of EGL contexts.
+            // Otherwise the device could runDraw out of EGL contexts.
             return mLimitedGLESContexts;
         }
 

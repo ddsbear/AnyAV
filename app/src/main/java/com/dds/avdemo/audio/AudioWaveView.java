@@ -20,28 +20,23 @@ import java.util.LinkedList;
 import java.util.List;
 
 
-public class WaveLineView extends View {
+/**
+ * 声音波形图
+ */
+public class AudioWaveView extends View {
 
+
+    /**
+     * LINE: 线性波形图 RECT: 方形波形图
+     */
     private final int LINE = 0;
     private final int RECT = 1;
-
-    private int middleLineColor = Color.BLACK;
-    private int voiceLineColor = Color.BLACK;
-    private float middleLineHeight = 4;
-    private Paint paint;
-    private Paint paintVoicLine;
     private int mode;
     /**
      * 灵敏度
      */
     private int sensibility = 4;
-
     private float maxVolume = 100;
-
-
-    private float translateX = 0;
-    private boolean isSet = false;
-
     /**
      * 振幅
      */
@@ -50,10 +45,14 @@ public class WaveLineView extends View {
      * 音量
      */
     private float volume = 10;
+
+    private int middleLineColor = Color.BLACK;
+    private int voiceLineColor = Color.BLACK;
+    private float middleLineHeight = 4;
+    private float translateX = 0;
+    private boolean isSet = false;
     private int fineness = 1;
     private float targetVolume = 1;
-
-
     private long speedY = 50;
     private float rectWidth = 25;
     private float rectSpace = 5;
@@ -65,35 +64,38 @@ public class WaveLineView extends View {
 
     List<Path> paths = null;
 
-    public WaveLineView(Context context) {
+    private Paint paint;
+    private Paint paintVoiceLine;
+
+    public AudioWaveView(Context context) {
         super(context);
     }
 
-    public WaveLineView(Context context, AttributeSet attrs) {
+    public AudioWaveView(Context context, AttributeSet attrs) {
         super(context, attrs);
-        initAtts(context, attrs);
+        init(context, attrs);
     }
 
-    public WaveLineView(Context context, AttributeSet attrs, int defStyleAttr) {
+    public AudioWaveView(Context context, AttributeSet attrs, int defStyleAttr) {
         super(context, attrs, defStyleAttr);
-        initAtts(context, attrs);
+        init(context, attrs);
     }
 
-    private void initAtts(Context context, AttributeSet attrs) {
-        TypedArray typedArray = context.obtainStyledAttributes(attrs, R.styleable.waveView);
-        mode = typedArray.getInt(R.styleable.waveView_viewMode, 0);
-        voiceLineColor = typedArray.getColor(R.styleable.waveView_voiceLine, ContextCompat.getColor(context, R.color.colorPrimary));
-        maxVolume = typedArray.getFloat(R.styleable.waveView_maxVolume, 100);
-        sensibility = typedArray.getInt(R.styleable.waveView_sensibility, 4);
+    private void init(Context context, AttributeSet attrs) {
+        TypedArray typedArray = context.obtainStyledAttributes(attrs, R.styleable.AudioWaveView);
+        mode = typedArray.getInt(R.styleable.AudioWaveView_viewMode, 0);
+        voiceLineColor = typedArray.getColor(R.styleable.AudioWaveView_voiceLine, ContextCompat.getColor(context, R.color.colorPrimary));
+        maxVolume = typedArray.getFloat(R.styleable.AudioWaveView_maxVolume, 100);
+        sensibility = typedArray.getInt(R.styleable.AudioWaveView_sensibility, 4);
         if (mode == RECT) {
-            rectWidth = typedArray.getDimension(R.styleable.waveView_rectWidth, 25);
-            rectSpace = typedArray.getDimension(R.styleable.waveView_rectSpace, 5);
-            rectInitHeight = typedArray.getDimension(R.styleable.waveView_rectInitHeight, 4);
-        } else {
-            middleLineColor = typedArray.getColor(R.styleable.waveView_middleLine, Color.BLACK);
-            middleLineHeight = typedArray.getDimension(R.styleable.waveView_middleLineHeight, 4);
-            lineSpeed = typedArray.getInt(R.styleable.waveView_lineSpeed, 90);
-            fineness = typedArray.getInt(R.styleable.waveView_fineness, 1);
+            rectWidth = typedArray.getDimension(R.styleable.AudioWaveView_rectWidth, 25);
+            rectSpace = typedArray.getDimension(R.styleable.AudioWaveView_rectSpace, 5);
+            rectInitHeight = typedArray.getDimension(R.styleable.AudioWaveView_rectInitHeight, 4);
+        } else if (mode == LINE) {
+            middleLineColor = typedArray.getColor(R.styleable.AudioWaveView_middleLine, Color.BLACK);
+            middleLineHeight = typedArray.getDimension(R.styleable.AudioWaveView_middleLineHeight, 4);
+            lineSpeed = typedArray.getInt(R.styleable.AudioWaveView_lineSpeed, 90);
+            fineness = typedArray.getInt(R.styleable.AudioWaveView_fineness, 1);
             paths = new ArrayList<>(20);
             for (int i = 0; i < 20; i++) {
                 paths.add(new Path());
@@ -110,7 +112,7 @@ public class WaveLineView extends View {
             drawMiddleLine(canvas);
             drawVoiceLine(canvas);
         }
-        run();
+        runDraw();
     }
 
     private void drawMiddleLine(Canvas canvas) {
@@ -120,24 +122,24 @@ public class WaveLineView extends View {
             paint.setAntiAlias(true);
         }
         canvas.save();
-        canvas.drawRect(0, getHeight() / 2 - middleLineHeight / 2, getWidth(), getHeight() / 2 + middleLineHeight / 2, paint);
+        canvas.drawRect(0, (getHeight() >> 1) - middleLineHeight / 2, getWidth(), (getHeight() >> 1) + middleLineHeight / 2, paint);
         canvas.restore();
     }
 
     private void drawVoiceLine(Canvas canvas) {
         lineChange();
-        if (paintVoicLine == null) {
-            paintVoicLine = new Paint();
-            paintVoicLine.setColor(voiceLineColor);
-            paintVoicLine.setAntiAlias(true);
-            paintVoicLine.setStyle(Paint.Style.STROKE);
-            paintVoicLine.setStrokeWidth(2);
+        if (paintVoiceLine == null) {
+            paintVoiceLine = new Paint();
+            paintVoiceLine.setColor(voiceLineColor);
+            paintVoiceLine.setAntiAlias(true);
+            paintVoiceLine.setStyle(Paint.Style.STROKE);
+            paintVoiceLine.setStrokeWidth(2);
         }
         canvas.save();
         int moveY = getHeight() / 2;
         for (int i = 0; i < paths.size(); i++) {
             paths.get(i).reset();
-            paths.get(i).moveTo(getWidth(), getHeight() / 2);
+            paths.get(i).moveTo(getWidth(), getHeight() >> 1);
         }
         for (float i = getWidth() - 1; i >= 0; i -= fineness) {
             amplitude = 4 * volume * i / getWidth() - 4 * volume * i * i / getWidth() / getWidth();
@@ -148,24 +150,24 @@ public class WaveLineView extends View {
         }
         for (int n = 0; n < paths.size(); n++) {
             if (n == paths.size() - 1) {
-                paintVoicLine.setAlpha(255);
+                paintVoiceLine.setAlpha(255);
             } else {
-                paintVoicLine.setAlpha(n * 130 / paths.size());
+                paintVoiceLine.setAlpha(n * 130 / paths.size());
             }
-            if (paintVoicLine.getAlpha() > 0) {
-                canvas.drawPath(paths.get(n), paintVoicLine);
+            if (paintVoiceLine.getAlpha() > 0) {
+                canvas.drawPath(paths.get(n), paintVoiceLine);
             }
         }
         canvas.restore();
     }
 
     private void drawVoiceRect(Canvas canvas) {
-        if (paintVoicLine == null) {
-            paintVoicLine = new Paint();
-            paintVoicLine.setColor(voiceLineColor);
-            paintVoicLine.setAntiAlias(true);
-            paintVoicLine.setStyle(Paint.Style.STROKE);
-            paintVoicLine.setStrokeWidth(2);
+        if (paintVoiceLine == null) {
+            paintVoiceLine = new Paint();
+            paintVoiceLine.setColor(voiceLineColor);
+            paintVoiceLine.setAntiAlias(true);
+            paintVoiceLine.setStyle(Paint.Style.STROKE);
+            paintVoiceLine.setStrokeWidth(2);
         }
         if (rectList == null) {
             rectList = new LinkedList<>();
@@ -183,7 +185,7 @@ public class WaveLineView extends View {
         }
         canvas.translate(speedY, 0);
         for (int i = rectList.size() - 1; i >= 0; i--) {
-            canvas.drawRect(rectList.get(i), paintVoicLine);
+            canvas.drawRect(rectList.get(i), paintVoiceLine);
         }
         rectChange();
     }
@@ -191,7 +193,7 @@ public class WaveLineView extends View {
     public void setVolume(int volume) {
         if (volume > maxVolume * sensibility / 25) {
             isSet = true;
-            this.targetVolume = getHeight() * volume / 2 / maxVolume;
+            this.targetVolume = ((getHeight() * volume) >> 1) / maxVolume;
         }
     }
 
@@ -241,7 +243,7 @@ public class WaveLineView extends View {
         }
     }
 
-    public void run() {
+    public void runDraw() {
         if (mode == RECT) {
             postInvalidateDelayed(30);
         } else {

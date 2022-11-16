@@ -14,13 +14,22 @@
     <application>
         <activity
             android:name=".OpenGLActivity"
-            android:screenOrientation="portrait"
-            android:theme="@style/Theme.AppCompat.NoActionBar"
-            android:exported="true">
+            android:exported="false">
             <meta-data
                 android:name="android.app.lib_name"
                 android:value="" />
         </activity>
+        <activity
+            android:name=".ui.GLCameraActivity"
+            android:exported="true"
+            android:screenOrientation="portrait"
+            android:theme="@style/Theme.AppCompat.NoActionBar">
+            <meta-data
+                android:name="android.app.lib_name"
+                android:value="" />
+        </activity>
+        <activity android:name="com.dds.gles.ui.GLGraphicalActivity" />
+        <activity android:name="com.dds.gles.ui.GLImageActivity" />
     </application>
 
 </manifest>

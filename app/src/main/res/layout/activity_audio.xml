@@ -7,7 +7,7 @@
     android:orientation="vertical"
     tools:context=".audio.AudioActivity">
 
-    <com.dds.avdemo.audio.WaveLineView
+    <com.dds.avdemo.audio.AudioWaveView
         android:id="@+id/waveLine"
         android:layout_width="match_parent"
         android:layout_height="200dp"
@@ -23,7 +23,7 @@
         waveView:rectSpace="2dp"
         waveView:rectWidth="5dp"
         waveView:sensibility="three"
-        waveView:viewMode="line"
+        waveView:viewMode="rect"
         waveView:voiceLine="@android:color/holo_orange_light" />
 
     <Button
@@ -84,7 +84,7 @@
         android:id="@+id/button9"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:onClick="amrplay"
+        android:onClick="amrPlay"
         android:text="amrplay"
         android:textAllCaps="false" />
 </LinearLayout>

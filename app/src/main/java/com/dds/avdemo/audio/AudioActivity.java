@@ -1,6 +1,8 @@
 package com.dds.avdemo.audio;
 
+import android.Manifest;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.media.AudioFormat;
 import android.media.AudioManager;
 import android.media.AudioRecord;
@@ -8,17 +10,17 @@ import android.media.AudioTrack;
 import android.media.MediaRecorder;
 import android.os.Bundle;
 import android.os.Environment;
- import android.util.Log;
+import android.util.Log;
 import android.view.View;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.app.ActivityCompat;
 
 import com.dds.avdemo.R;
 
 import java.io.DataInputStream;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.UUID;
@@ -144,6 +146,9 @@ public class AudioActivity extends AppCompatActivity {
             int channelConfiguration = AudioFormat.CHANNEL_IN_MONO;
 
             //MediaRecorder.AudioSource.MIC设定录音来源为主麦克风
+            if (ActivityCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
+                return;
+            }
             audioRecord = new AudioRecord(MediaRecorder.AudioSource.MIC, frequency, channelConfiguration, encodingBitRate, recordBufSize);
         }
 
@@ -179,21 +184,13 @@ public class AudioActivity extends AppCompatActivity {
 
     }
 
-
     public void wav2amr(View view) {
-
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-                AmrEncoder.convertAMR(wavFileName, amrFileName);
-
-            }
-        }).start();
+        new Thread(() -> AmrEncoder.convertAMR(wavFileName, amrFileName)).start();
 
 
     }
 
-    public void amrplay(View view) {
+    public void amrPlay(View view) {
 
     }
 
@@ -233,8 +230,6 @@ public class AudioActivity extends AppCompatActivity {
                     }
                 }
                 dis.close();
-            } catch (FileNotFoundException e) {
-                e.printStackTrace();
             } catch (IOException e) {
                 e.printStackTrace();
             }
@@ -272,7 +267,6 @@ public class AudioActivity extends AppCompatActivity {
             mAudioTrack.release();
             mAudioTrack = null;
         }
-
         if (audioRecord != null) {
             audioRecord.stop();
             audioRecord.release();

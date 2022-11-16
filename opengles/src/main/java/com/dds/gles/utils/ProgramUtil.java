@@ -15,7 +15,6 @@ import java.nio.IntBuffer;
 public class ProgramUtil {
     private static final String TAG = "ProgramUtil";
 
-
     /**
      * 加载着色器
      *
@@ -115,6 +114,10 @@ public class ProgramUtil {
         return 0;
     }
 
+    /**
+     * 创建一个相机预览的OES纹理
+     * @return int
+     */
     public static int createOESTexture() {
         int[] textures = new int[1];
         GLES30.glGenTextures(1, textures, 0);

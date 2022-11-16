@@ -9,7 +9,6 @@ import java.io.InputStreamReader;
 
 public class OpenGLUtils {
 
-
     public static String readRawTextFile(Context context, int rawId) {
         InputStream is = context.getResources().openRawResource(rawId);
         BufferedReader br = new BufferedReader(new InputStreamReader(is));
@@ -30,4 +29,6 @@ public class OpenGLUtils {
         }
         return sb.toString();
     }
+
+
 }
