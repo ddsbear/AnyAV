@@ -5,9 +5,9 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    tools:context=".audio.AudioActivity">
+    tools:context="com.dds.audio.AudioActivity">
 
-    <com.dds.avdemo.audio.AudioWaveView
+    <com.dds.audio.AudioWaveView
         android:id="@+id/waveLine"
         android:layout_width="match_parent"
         android:layout_height="200dp"

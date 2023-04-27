@@ -14,4 +14,6 @@ dependencyResolutionManagement {
 }
 rootProject.name = "AnyAV"
 include ':app'
-include ':opengles'
+include ':gldemo_opengles'
+include ':feature_audio'
+include ':feature_video'

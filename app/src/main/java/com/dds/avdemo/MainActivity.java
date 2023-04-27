@@ -2,23 +2,19 @@ package com.dds.avdemo;
 
 import android.Manifest;
 import android.content.Intent;
-import android.os.Build;
 import android.os.Bundle;
-
 import android.view.View;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 
-import com.dds.avdemo.audio.AudioActivity;
+import com.dds.audio.AudioActivity;
 import com.dds.avdemo.media.MediaActivity;
 import com.dds.avdemo.media.MediaCodecActivity;
 import com.dds.avdemo.media.RecordActivity;
-import com.dds.avdemo.permission.Consumer;
 import com.dds.avdemo.permission.Permissions;
 import com.dds.avdemo.video.VideoActivity;
 import com.dds.gles.OpenGLActivity;
-import com.dds.gles.ui.GLCameraActivity;
 
 public class MainActivity extends AppCompatActivity {
 

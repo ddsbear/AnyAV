@@ -1,5 +1,6 @@
 package com.dds.avdemo.media;
 
+import android.annotation.SuppressLint;
 import android.content.Intent;
 import android.media.MediaCodec;
 import android.media.MediaExtractor;
@@ -119,6 +120,7 @@ public class MediaActivity extends AppCompatActivity {
 
 
     //分离视频的纯视频
+    @SuppressLint("WrongConstant")
     private void muxerMedia() {
         mediaExtractor = new MediaExtractor();
         int videoIndex = -1;
@@ -186,6 +188,7 @@ public class MediaActivity extends AppCompatActivity {
     }
 
     //分离视频的纯音频
+    @SuppressLint("WrongConstant")
     private void muxerAudio() {
         mediaExtractor = new MediaExtractor();
         int audioIndex = -1;
@@ -249,6 +252,7 @@ public class MediaActivity extends AppCompatActivity {
 
 
     // 合成视频
+    @SuppressLint("WrongConstant")
     private void combineVideo() {
         try {
             MediaExtractor videoExtractor = new MediaExtractor();

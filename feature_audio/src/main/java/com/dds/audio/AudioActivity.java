@@ -1,4 +1,4 @@
-package com.dds.avdemo.audio;
+package com.dds.audio;
 
 import android.Manifest;
 import android.content.Intent;
@@ -16,7 +16,8 @@ import android.view.View;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 
-import com.dds.avdemo.R;
+
+import com.example.audio.R;
 
 import java.io.DataInputStream;
 import java.io.File;

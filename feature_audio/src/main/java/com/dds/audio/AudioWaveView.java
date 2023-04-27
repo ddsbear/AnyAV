@@ -1,4 +1,4 @@
-package com.dds.avdemo.audio;
+package com.dds.audio;
 
 import android.content.Context;
 import android.content.res.TypedArray;
@@ -7,13 +7,13 @@ import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Path;
 import android.graphics.Rect;
-
 import android.util.AttributeSet;
 import android.view.View;
 
 import androidx.core.content.ContextCompat;
 
-import com.dds.avdemo.R;
+
+import com.example.audio.R;
 
 import java.util.ArrayList;
 import java.util.LinkedList;
@@ -84,7 +84,7 @@ public class AudioWaveView extends View {
     private void init(Context context, AttributeSet attrs) {
         TypedArray typedArray = context.obtainStyledAttributes(attrs, R.styleable.AudioWaveView);
         mode = typedArray.getInt(R.styleable.AudioWaveView_viewMode, 0);
-        voiceLineColor = typedArray.getColor(R.styleable.AudioWaveView_voiceLine, ContextCompat.getColor(context, R.color.colorPrimary));
+        voiceLineColor = typedArray.getColor(R.styleable.AudioWaveView_voiceLine, Color.parseColor("#e45343"));
         maxVolume = typedArray.getFloat(R.styleable.AudioWaveView_maxVolume, 100);
         sensibility = typedArray.getInt(R.styleable.AudioWaveView_sensibility, 4);
         if (mode == RECT) {

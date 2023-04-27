@@ -1,4 +1,4 @@
-package com.dds.avdemo.audio;
+package com.dds.audio;
 
 import android.media.AudioManager;
 import android.media.AudioRecord;
