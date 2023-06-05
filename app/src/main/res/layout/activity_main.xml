@@ -56,6 +56,15 @@
             android:onClick="opengl"
             android:text="opengl"
             android:textAllCaps="false" />
+
+
+        <Button
+            android:id="@+id/button10"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:onClick="Camera2_SurfaceView"
+            android:text="Camera2+SurfaceView"
+            android:textAllCaps="false" />
     </LinearLayout>
 
 

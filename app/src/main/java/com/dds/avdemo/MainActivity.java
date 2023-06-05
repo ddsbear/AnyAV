@@ -14,6 +14,7 @@ import com.dds.avdemo.media.MediaCodecActivity;
 import com.dds.avdemo.media.RecordActivity;
 import com.dds.avdemo.permission.Permissions;
 import com.dds.avdemo.video.VideoActivity;
+import com.dds.camera.CameraActivity;
 import com.dds.gles.OpenGLActivity;
 
 public class MainActivity extends AppCompatActivity {
@@ -59,5 +60,9 @@ public class MainActivity extends AppCompatActivity {
     public void opengl(View view) {
         startActivity(new Intent(this, OpenGLActivity.class));
 
+    }
+
+    public void Camera2_SurfaceView(View view) {
+        CameraActivity.launchActivity(this);
     }
 }

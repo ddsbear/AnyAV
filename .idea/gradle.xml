@@ -12,6 +12,7 @@
           <set>
             <option value="$PROJECT_DIR$" />
             <option value="$PROJECT_DIR$/app" />
+            <option value="$PROJECT_DIR$/demo_camera" />
             <option value="$PROJECT_DIR$/feature_audio" />
             <option value="$PROJECT_DIR$/feature_video" />
             <option value="$PROJECT_DIR$/gldemo_opengles" />
