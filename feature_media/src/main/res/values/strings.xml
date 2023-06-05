@@ -1,0 +1,9 @@
+<resources xmlns:tools="http://schemas.android.com/tools">
+
+    <string name="length_video" tools:ignore="ExtraTranslation">Length:</string>
+    <string name="gravando" tools:ignore="ExtraTranslation">Recording…</string>
+    <string name="stop" tools:ignore="ExtraTranslation">Stop</string>
+
+    <string name="using_your_mic_to_record_audio" tools:ignore="ExtraTranslation">Using your mic to record audio and your sd card to save video file</string>
+
+</resources>

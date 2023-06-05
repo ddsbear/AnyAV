@@ -11,11 +11,6 @@
     <uses-permission
         android:name="android.permission.MOUNT_UNMOUNT_FILESYSTEMS"
         tools:ignore="ProtectedPermissions" />
-    <!-- Tell the system this app requires OpenGL ES 2.0. -->
-    <uses-feature android:glEsVersion="0x00020000" android:required="true" />
-    <uses-feature
-        android:name="android.hardware.camera"
-        android:required="false" />
 
     <application
         android:allowBackup="true"
@@ -25,12 +20,8 @@
         android:supportsRtl="true"
         android:theme="@style/AppTheme"
         tools:ignore="GoogleAppIndexingWarning">
-        <activity android:name=".media.RecordActivity" />
-        <!-- 录屏 -->
-        <service
-            android:name=".media.RecordService"
-            android:enabled="true"
-            android:exported="true" />
+
+
 
         <activity android:name=".MainActivity"
             android:exported="true">
@@ -40,19 +31,9 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <activity android:name=".audio.AudioActivity"
-            android:exported="true">
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-            </intent-filter>
-        </activity>
-        <activity android:name=".video.VideoActivity" />
-        <activity android:name=".video.SurfaceViewActivity" />
-        <activity android:name=".video.TextureViewActivity" />
-        <activity android:name=".media.MediaActivity" />
-        <activity android:name=".media.MediaCodecActivity" />
-        <activity android:name=".opegl.camera.takepic.TakePictureActivity" />
-        <activity android:name=".opegl.camera.preview.PreviewCameraActivity" />
+
+        <activity android:name="com.dds.gles2.camera.takepic.TakePictureActivity" />
+        <activity android:name="com.dds.gles2.camera.preview.PreviewCameraActivity" />
     </application>
 
 </manifest>

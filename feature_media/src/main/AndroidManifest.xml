@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <application>
+        <activity
+            android:name=".MediaActivity"
+            android:exported="false" />
+
+        <activity android:name=".media.RecordActivity" />
+
+
+        <service
+            android:name=".media.RecordService"
+            android:enabled="true"
+            android:exported="true" />
+    </application>
+
+</manifest>
