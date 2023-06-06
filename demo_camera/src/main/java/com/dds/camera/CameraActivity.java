@@ -15,14 +15,16 @@ import android.widget.RelativeLayout;
 import android.widget.Toast;
 
 import com.dds.base.permission.Permissions;
+import com.dds.camera.ui.SurfaceViewCamera2Activity;
 import com.dds.fbo.R;
 
- import java.util.ArrayList;
+import java.util.ArrayList;
 
 public class CameraActivity extends AppCompatActivity implements View.OnClickListener {
 
     private RecyclerView recyclerView;
     private static final ArrayList<MenuBean> mData = new ArrayList<>();
+    public static final String BUNDLE_KEY = "bundle";
 
     static {
         add("Camera2+SurfaceView", SurfaceViewCamera2Activity.class);
@@ -37,7 +39,9 @@ public class CameraActivity extends AppCompatActivity implements View.OnClickLis
         initData();
 
         Permissions.request(this, new String[]{
-                Manifest.permission.CAMERA}, integer -> {
+                Manifest.permission.CAMERA,
+                Manifest.permission.WRITE_EXTERNAL_STORAGE
+        }, integer -> {
             if (integer != 0) {
                 Toast.makeText(this, "请给权限", Toast.LENGTH_LONG).show();
             }
@@ -51,15 +55,21 @@ public class CameraActivity extends AppCompatActivity implements View.OnClickLis
     }
 
     private static void add(String name, Class<?> clazz) {
+        add(name, clazz, null);
+    }
+
+    private static void add(String name, Class<?> clazz, Bundle bundle) {
         MenuBean bean = new MenuBean();
         bean.name = name;
         bean.clazz = clazz;
+        bean.bundle = bundle;
         mData.add(bean);
     }
 
     private static class MenuBean {
         String name;
         Class<?> clazz;
+        Bundle bundle;
     }
 
     private class MenuAdapter extends RecyclerView.Adapter<MenuAdapter.MenuHolder> {
@@ -106,6 +116,8 @@ public class CameraActivity extends AppCompatActivity implements View.OnClickLis
     public void onClick(View view) {
         int position = (int) view.getTag();
         MenuBean bean = mData.get(position);
-        startActivity(new Intent(this, bean.clazz));
+        Intent intent = new Intent(this, bean.clazz);
+        intent.putExtra(BUNDLE_KEY, bean.bundle);
+        startActivity(intent);
     }
 }

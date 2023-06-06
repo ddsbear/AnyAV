@@ -16,9 +16,7 @@ import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
-import com.dds.audio.AudioActivity;
 import com.dds.camera.CameraActivity;
-import com.dds.camera.SurfaceViewCamera2Activity;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -33,7 +31,6 @@ public class ItemFragment extends Fragment {
     private int mColumnCount = 1;
 
     static {
-        addItem("Audio Demo", AudioActivity.class);
         addItem("Camera Demo", CameraActivity.class);
     }
 

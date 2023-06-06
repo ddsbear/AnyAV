@@ -39,9 +39,6 @@ dependencies {
 
 
     implementation project(path: ':base')
-    implementation project(path: ':feature_audio')
-    implementation project(path: ':feature_video')
-    implementation project(path: ':demo_opengles')
-
     implementation project(path: ':demo_camera')
+    implementation project(path: ':demo_opengles')
 }
