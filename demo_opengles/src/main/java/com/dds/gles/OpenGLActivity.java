@@ -5,15 +5,22 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import android.Manifest;
 import android.content.Intent;
 import android.os.Bundle;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
+import android.widget.Toast;
 
-import com.dds.gles.ui.GLCameraActivity;
-import com.dds.gles.ui.GLGraphicalActivity;
-import com.dds.gles.ui.GLImageActivity;
+import com.dds.base.permission.Permissions;
+import com.dds.gles.demo2.camera.preview.PreviewCameraActivity;
+import com.dds.gles.demo2.camera.takepic.TakePictureActivity;
+import com.dds.gles.demo3.RenderActivity;
+import com.dds.gles.matrix.MatrixActivity;
+import com.dds.gles.demo1.ui.GLCameraActivity;
+import com.dds.gles.demo1.ui.GLGraphicalActivity;
+import com.dds.gles.demo1.ui.GLImageActivity;
 
 import java.util.ArrayList;
 
@@ -25,16 +32,27 @@ public class OpenGLActivity extends AppCompatActivity implements View.OnClickLis
     static {
         add("绘制图形", GLGraphicalActivity.class);
         add("绘制图片", GLImageActivity.class);
-        add("摄像机预览", GLCameraActivity.class);
+        add("摄像机预览+Camera2", GLCameraActivity.class);
+        add("摄像机预览+OpenGL", RenderActivity.class);
     }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_open_gl);
-        recyclerView = (RecyclerView) findViewById(R.id.mList);
+        recyclerView = findViewById(R.id.mList);
         recyclerView.setLayoutManager(new LinearLayoutManager(this, LinearLayoutManager.VERTICAL, false));
         initData();
+
+        Permissions.request(this, new String[]{
+                Manifest.permission.CAMERA,
+                Manifest.permission.WRITE_EXTERNAL_STORAGE
+        }, integer -> {
+            if (integer != 0) {
+                Toast.makeText(this, "请给权限", Toast.LENGTH_LONG).show();
+            }
+
+        });
     }
 
     // 初始化按钮列表

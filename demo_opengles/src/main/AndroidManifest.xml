@@ -10,11 +10,23 @@
 
     <uses-feature android:name="android.hardware.camera" />
     <uses-feature android:name="android.hardware.camera.autofocus" />
+
+    <!--    GLSL ES Version | OpenGL ES version | Shader Preprocessor | Release Date-->
+    <!--    1.00 ES           2.0                 #version 100          2007-03-05-->
+    <!--    3.00 ES           3.0                 #version 300 es       2012-08-06-->
+    <!--    3.10 ES           3.1                 #version 310 es       2014-03-17-->
+    <!--    3.20 ES           3.2                 #version 320 es       2015-08-10-->
     <uses-feature
-        android:glEsVersion="0x00020000"
+        android:glEsVersion="0x00030000"
         android:required="true" />
 
     <application>
+        <activity
+            android:name=".demo3.RenderActivity"
+            android:exported="false" />
+        <activity
+            android:name=".matrix.MatrixActivity"
+            android:exported="false" />
         <activity
             android:name=".OpenGLActivity"
             android:exported="false">
@@ -23,7 +35,7 @@
                 android:value="" />
         </activity>
         <activity
-            android:name=".ui.GLCameraActivity"
+            android:name=".demo1.ui.GLCameraActivity"
             android:exported="true"
             android:screenOrientation="portrait"
             android:theme="@style/Theme.AppCompat.NoActionBar">
@@ -31,8 +43,8 @@
                 android:name="android.app.lib_name"
                 android:value="" />
         </activity>
-        <activity android:name="com.dds.gles.ui.GLGraphicalActivity" />
-        <activity android:name="com.dds.gles.ui.GLImageActivity" />
+        <activity android:name=".demo1.ui.GLGraphicalActivity" />
+        <activity android:name=".demo1.ui.GLImageActivity" />
     </application>
 
 </manifest>
