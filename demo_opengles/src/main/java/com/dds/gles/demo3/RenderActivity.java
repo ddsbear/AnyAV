@@ -1,16 +1,10 @@
 package com.dds.gles.demo3;
 
-import androidx.annotation.NonNull;
-import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.app.ActivityCompat;
-
 import android.Manifest;
 import android.app.Activity;
 import android.content.Context;
-import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
-import android.graphics.ImageFormat;
 import android.graphics.SurfaceTexture;
 import android.hardware.camera2.CameraAccessException;
 import android.hardware.camera2.CameraCaptureSession;
@@ -21,15 +15,10 @@ import android.hardware.camera2.CaptureRequest;
 import android.hardware.camera2.CaptureResult;
 import android.hardware.camera2.TotalCaptureResult;
 import android.hardware.camera2.params.StreamConfigurationMap;
-import android.media.Image;
-import android.media.ImageReader;
-import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
-import android.os.Environment;
 import android.os.Handler;
 import android.os.HandlerThread;
-import android.os.Looper;
 import android.util.Log;
 import android.util.Size;
 import android.util.SparseIntArray;
@@ -39,17 +28,14 @@ import android.view.SurfaceView;
 import android.view.View;
 import android.view.Window;
 import android.view.WindowManager;
-import android.widget.Button;
-import android.widget.Toast;
+
+import androidx.annotation.NonNull;
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.app.ActivityCompat;
 
 import com.dds.gles.R;
 import com.dds.gles.demo3.render.RenderManager;
-import com.dds.gles.demo3.view.AutoFitSurfaceView;
 
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -58,11 +44,9 @@ import java.util.List;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 
-public class RenderActivity extends AppCompatActivity implements SurfaceHolder.Callback {
+public class RenderActivity extends AppCompatActivity implements SurfaceHolder.Callback, SurfaceTexture.OnFrameAvailableListener {
     private static final String TAG = "SurfaceViewCamera2Activity";
     private SurfaceView mSurfaceView;
-
-
     private Surface mPreviewSurface;
 
     private final Size mDesiredPreviewSize = new Size(1920, 1080);
@@ -96,7 +80,6 @@ public class RenderActivity extends AppCompatActivity implements SurfaceHolder.C
         ORIENTATIONS.append(Surface.ROTATION_270, 180);
     }
 
-
     private RenderManager mRenderManager;
 
     @Override
@@ -109,7 +92,6 @@ public class RenderActivity extends AppCompatActivity implements SurfaceHolder.C
         initCameraManager();
 
         mRenderManager = new RenderManager();
-        mRenderManager.prepare();
     }
 
     @Override
@@ -123,6 +105,8 @@ public class RenderActivity extends AppCompatActivity implements SurfaceHolder.C
         super.onPause();
         closeCamera();
         stopBackgroundThread();
+
+        mRenderManager.destroy();
     }
 
     @Override
@@ -182,10 +166,10 @@ public class RenderActivity extends AppCompatActivity implements SurfaceHolder.C
         }
     }
 
-
-
     private void setUpOutputSurfaces() {
-        mRenderManager.start(mPreviewSize.getWidth(), mPreviewSize.getHeight());
+        Log.d(TAG, "setUpOutputSurfaces: preview width = " + mPreviewSize.getWidth() + ",height = " + mPreviewSize.getHeight());
+        mRenderManager.setup(mPreviewSize.getWidth(), mPreviewSize.getHeight());
+        mRenderManager.startPreview(mPreviewSurface);
     }
 
     private void openCamera() {
@@ -273,11 +257,17 @@ public class RenderActivity extends AppCompatActivity implements SurfaceHolder.C
 
     private void createCameraPreviewSession() {
         try {
+            Log.d(TAG, "createCameraPreviewSession: ");
+            SurfaceTexture texture = mRenderManager.getSurfaceTexture();
+            texture.setDefaultBufferSize(mPreviewSize.getWidth(), mPreviewSize.getHeight());
+            texture.setOnFrameAvailableListener(this);
+            Surface surface = new Surface(texture);
             mPreviewRequestBuilder = mCameraDevice.createCaptureRequest(CameraDevice.TEMPLATE_PREVIEW);
-            mPreviewRequestBuilder.addTarget(mPreviewSurface);
-            mCameraDevice.createCaptureSession(Arrays.asList(mPreviewSurface), new CameraCaptureSession.StateCallback() {
+            mPreviewRequestBuilder.addTarget(surface);
+            mCameraDevice.createCaptureSession(Arrays.asList(surface), new CameraCaptureSession.StateCallback() {
                 @Override
                 public void onConfigured(@NonNull CameraCaptureSession session) {
+                    Log.d(TAG, "onConfigured: " + session.getInputSurface());
                     if (null == mCameraDevice) {
                         return;
                     }
@@ -326,6 +316,7 @@ public class RenderActivity extends AppCompatActivity implements SurfaceHolder.C
         }
     };
 
+
     static class CompareSizesByArea implements Comparator<Size> {
         @Override
         public int compare(Size lhs, Size rhs) {
@@ -336,7 +327,13 @@ public class RenderActivity extends AppCompatActivity implements SurfaceHolder.C
     }
 
     @Override
+    public void onFrameAvailable(SurfaceTexture surfaceTexture) {
+        mRenderManager.drawFrame();
+    }
+
+    @Override
     public void surfaceCreated(@NonNull SurfaceHolder holder) {
+        Log.d(TAG, "surfaceCreated: ");
         mPreviewSurface = holder.getSurface();
         setUpOutputSurfaces();
         openCamera();

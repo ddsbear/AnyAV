@@ -1,13 +1,19 @@
 package com.dds.gles.demo3.render;
 
 import android.content.Context;
+import android.content.res.AssetManager;
+import android.opengl.GLES11Ext;
 import android.opengl.GLES20;
+import android.opengl.GLES30;
 import android.opengl.GLException;
 
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
+import java.nio.FloatBuffer;
 
 public class GLESTool {
 
@@ -24,6 +30,32 @@ public class GLESTool {
                     ? new GlOutOfMemoryException(error, op)
                     : new GLException(error, op + " glError 0x" + Integer.toHexString(error));
         }
+    }
+
+    /**
+     * Create an OES texture for the camera preview
+     *
+     * @return int texture ID
+     */
+    public static int createOESTexture() {
+        int[] textures = new int[1];
+        GLES30.glGenTextures(1, textures, 0);
+        GLES30.glBindTexture(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, textures[0]);
+        checkGlError("glBindTexture");
+        GLES30.glTexParameterf(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, GLES30.GL_TEXTURE_MIN_FILTER, GLES30.GL_NEAREST);
+        GLES30.glTexParameterf(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, GLES30.GL_TEXTURE_MAG_FILTER, GLES30.GL_NEAREST);
+        GLES30.glTexParameterf(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, GLES30.GL_TEXTURE_WRAP_S, GLES30.GL_REPEAT);
+        GLES30.glTexParameterf(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, GLES30.GL_TEXTURE_WRAP_T, GLES30.GL_REPEAT);
+        return textures[0];
+    }
+
+    public static FloatBuffer createFloatBuffer(float[] s) {
+        ByteBuffer b = ByteBuffer.allocateDirect(s.length * 4);
+        b.order(ByteOrder.nativeOrder());
+        FloatBuffer bPosition = b.asFloatBuffer();
+        bPosition.put(s);
+        bPosition.position(0);
+        return bPosition;
     }
 
     public static String readRawTextFile(Context context, int rawId) {
@@ -45,6 +77,25 @@ public class GLESTool {
             e.printStackTrace();
         }
         return sb.toString();
+    }
+
+    public static String readAssetTextFile(Context context, String file) {
+        try {
+            AssetManager assetManager = context.getAssets();
+            InputStream ims = assetManager.open(file);
+            String re = convertStreamToString(ims);
+            ims.close();
+            return re;
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return "";
+    }
+
+    public static String convertStreamToString(java.io.InputStream is) {
+        java.util.Scanner s = new java.util.Scanner(is).useDelimiter("\\A");
+        return s.hasNext() ? s.next() : "";
     }
 
 }

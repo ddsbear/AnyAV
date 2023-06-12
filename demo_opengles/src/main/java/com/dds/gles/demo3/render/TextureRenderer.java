@@ -1,18 +1,22 @@
 package com.dds.gles.demo3.render;
 
+import android.opengl.GLES11Ext;
 import android.opengl.GLES20;
 import android.opengl.Matrix;
-import android.util.Log;
+
+import java.nio.FloatBuffer;
 
 public class TextureRenderer extends BaseTextureRender {
     private static final String TAG = "TextureRenderer";
     private static final int GL_MATRIX_SIZE = 16;
     private final float[] mSTMatrix = new float[GL_MATRIX_SIZE];
+    private final float[] mMVPMatrix = new float[GL_MATRIX_SIZE];
+    private static final int TRIANGLE_VERTICES_DATA_POS_OFFSET = 0;
+    private static final int VERTEX_POS_SIZE = 3;
+    private static final int VERTEX_UV_SIZE = 2;
 
-
-    private int mVertexShaderHandle = 0;
-    private int mFragmentShaderHandle = 0;
-    private int mProgramHandle = 0;
+    private static final int TRIANGLE_VERTICES_DATA_STRIDE_BYTES = 5 * FLOAT_SIZE_BYTES;
+    private static final int TRIANGLE_VERTICES_DATA_UV_OFFSET = 3;
 
 
     private int muMVPMatrixHandle;
@@ -20,67 +24,58 @@ public class TextureRenderer extends BaseTextureRender {
     private int maPositionHandle;
     private int maTextureHandle;
 
+    private GlShader mGLShader;
+
     public TextureRenderer() {
         super();
         Matrix.setIdentityM(mSTMatrix, 0);
+        mGLShader = new GlShader(VERTEX_SHADER_OES, FRAGMENT_SHADER_OES);
+        maPositionHandle = mGLShader.getAttribLocation("aPosition");
+        maTextureHandle = mGLShader.getAttribLocation("aTextureCoord");
+        muMVPMatrixHandle = mGLShader.getUniformLocation("uMVPMatrix");
+        muSTMatrixHandle = mGLShader.getUniformLocation("uSTMatrix");
     }
 
-    public void init() {
-        mVertexShaderHandle = compileShader(GLES20.GL_VERTEX_SHADER, VERTEX_SHADER_OES);
-        mFragmentShaderHandle = compileShader(GLES20.GL_FRAGMENT_SHADER, FRAGMENT_SHADER_OES);
-        if (mVertexShaderHandle == 0 || mFragmentShaderHandle == 0) {
-            Log.e(TAG, "Aborting program creation.");
-            return;
-        }
-        mProgramHandle = createAndLink(mVertexShaderHandle, mFragmentShaderHandle);
-        GLES20.glDeleteShader(mVertexShaderHandle);
-        GLES20.glDeleteShader(mFragmentShaderHandle);
-        GLESTool.checkGlError("Linking program .");
 
-        maPositionHandle = GLES20.glGetAttribLocation(mProgramHandle, "aPosition");
-        maTextureHandle = GLES20.glGetAttribLocation(mProgramHandle, "aTextureCoord");
-        muMVPMatrixHandle = GLES20.glGetUniformLocation(mProgramHandle, "uMVPMatrix");
-        muSTMatrixHandle = GLES20.glGetUniformLocation(mProgramHandle, "uSTMatrix");
+    public void draw(int textureId, int width, int height) {
+        Matrix.setIdentityM(mMVPMatrix, 0);
+
+        GLES20.glViewport(0, 0, width, height);
+
+        mGLShader.useProgram();
+
+        // bindTexture
+        GLES20.glActiveTexture(GLES20.GL_TEXTURE0);
+        GLES20.glBindTexture(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, textureId);
+
+        FloatBuffer triangleVertices = mRegularTriangleVertices;
+        triangleVertices.position(TRIANGLE_VERTICES_DATA_POS_OFFSET);
+
+        // draw position
+        GLES20.glEnableVertexAttribArray(maPositionHandle);
+        GLES20.glVertexAttribPointer(maPositionHandle, VERTEX_POS_SIZE, GLES20.GL_FLOAT,
+                false, TRIANGLE_VERTICES_DATA_STRIDE_BYTES, triangleVertices);
+
+        // draw aTextureCoord
+        triangleVertices.position(TRIANGLE_VERTICES_DATA_UV_OFFSET);
+        GLES20.glEnableVertexAttribArray(maTextureHandle);
+        GLES20.glVertexAttribPointer(maTextureHandle, VERTEX_UV_SIZE, GLES20.GL_FLOAT, false, TRIANGLE_VERTICES_DATA_STRIDE_BYTES, triangleVertices);
+
+
+        // Upload the texture transformation matrix.
+        GLES20.glUniformMatrix4fv(muMVPMatrixHandle, 1, false, mMVPMatrix, 0);
+        GLES20.glUniformMatrix4fv(muSTMatrixHandle, 1, false, mSTMatrix, 0);
+        // Draw the textures.
+        GLES20.glDrawArrays(GLES20.GL_TRIANGLE_STRIP, 0, 4);
+        GLESTool.checkGlError("glDrawArrays");
+
     }
 
-    private int compileShader(int type, String source) {
-        final int shader = GLES20.glCreateShader(type);
-        if (shader == 0) {
-            GLESTool.checkGlError("glCreateShader failed:");
-            return 0;
+    public void release() {
+        if (mGLShader != null) {
+            mGLShader.release();
         }
-        GLES20.glShaderSource(shader, source);
-        GLES20.glCompileShader(shader);
 
-        int[] compileStatus = {GLES20.GL_FALSE};
-        GLES20.glGetShaderiv(shader, GLES20.GL_COMPILE_STATUS, compileStatus, 0);
-        if (compileStatus[0] != GLES20.GL_TRUE) {
-            String errorLog = GLES20.glGetShaderInfoLog(shader);
-            GLES20.glDeleteShader(shader);
-            Log.e(TAG, "Error compiling shader: " + errorLog);
-            return 0;
-        }
-        return shader;
-    }
-
-    private int createAndLink(int vertexShader, int fragmentShader) {
-        final int program = GLES20.glCreateProgram();
-
-        GLES20.glAttachShader(program, vertexShader);
-        GLES20.glAttachShader(program, fragmentShader);
-
-        GLES20.glLinkProgram(program);
-
-        int[] linkStatus = {GLES20.GL_FALSE};
-        GLES20.glGetProgramiv(program, GLES20.GL_LINK_STATUS, linkStatus, 0);
-
-        if (linkStatus[0] != GLES20.GL_TRUE) {
-            String errorLog = GLES20.glGetProgramInfoLog(program);
-            GLES20.glDeleteProgram(program);
-            Log.e(TAG, "Error linking program: " + errorLog);
-            return 0;
-        }
-        return program;
     }
 
 

@@ -7,53 +7,70 @@ import android.opengl.EGLContext;
 import android.opengl.EGLDisplay;
 import android.opengl.EGLExt;
 import android.opengl.EGLSurface;
-import android.opengl.GLES11Ext;
 import android.opengl.GLES20;
 import android.os.Handler;
 import android.os.HandlerThread;
 import android.os.Looper;
 import android.os.Message;
+import android.util.Log;
+import android.view.Surface;
 
 import androidx.annotation.NonNull;
-
-import com.dds.gles.demo1.render.camera.CameraPreViewRenderer;
 
 public class RenderManager {
     private static final String TAG = "RenderManager";
     private HandlerThread mGLHandlerThread;
-    private GLHandler mHandler;
+    private final GLHandler mHandler;
 
     private final Object syncOp = new Object();
 
     public RenderManager() {
         mGLHandlerThread = new HandlerThread(TAG);
+        mGLHandlerThread.start();
+        mHandler = new GLHandler(mGLHandlerThread.getLooper());
     }
 
-    public void prepare() {
+    public SurfaceTexture getSurfaceTexture() {
+        return mHandler.mSurfaceTexture;
+    }
+
+    public void setup(int width, int height) {
         synchronized (syncOp) {
-            mGLHandlerThread.start();
-            mHandler = new GLHandler(mGLHandlerThread.getLooper());
-            mHandler.sendEmptyMessage(GLHandler.MSG_INIT);
+            mHandler.removeMessages(GLHandler.MSG_SETUP);
+            mHandler.sendMessage(mHandler.obtainMessage(GLHandler.MSG_SETUP, width, height));
         }
 
     }
 
-    public void start(int width, int height) {
+    public void startPreview(Surface surface) {
         synchronized (syncOp) {
-            mHandler.removeMessages(GLHandler.MSG_START);
-            mHandler.sendMessage(mHandler.obtainMessage(GLHandler.MSG_START, width, height));
+            mHandler.removeMessages(GLHandler.MSG_PREVIEW);
+            mHandler.sendMessage(mHandler.obtainMessage(GLHandler.MSG_PREVIEW, surface));
         }
 
+    }
+
+    public void drawFrame() {
+        synchronized (syncOp) {
+            mHandler.removeMessages(GLHandler.MSG_DRAW_FRAME);
+            mHandler.sendMessage(mHandler.obtainMessage(GLHandler.MSG_DRAW_FRAME));
+        }
     }
 
     public void destroy() {
         synchronized (syncOp) {
             if (mHandler != null) {
-                mHandler.sendEmptyMessage(GLHandler.MSG_UN_INIT);
+                mHandler.sendEmptyMessage(GLHandler.MSG_RELEASE);
             }
             if (mGLHandlerThread != null) {
                 mGLHandlerThread.quitSafely();
+                try {
+                    mGLHandlerThread.join();
+                } catch (InterruptedException e) {
+                    Log.e(TAG, "destroy: " + e);
+                }
             }
+
 
         }
 
@@ -61,9 +78,11 @@ public class RenderManager {
 
     private static class GLHandler extends Handler {
 
-        static final int MSG_INIT = 0x001;
-        static final int MSG_UN_INIT = 0x002;
-        static final int MSG_START = 0x003;
+        static final int MSG_SETUP = 0x003;
+        static final int MSG_RELEASE = 0x002;
+        static final int MSG_DRAW_FRAME = 0x004;
+
+        static final int MSG_PREVIEW = 0x005;
 
         private EGLDisplay mEGLDisplay = EGL14.EGL_NO_DISPLAY;
         private EGLConfig mConfig;
@@ -71,32 +90,63 @@ public class RenderManager {
         private EGLSurface mStubEglSurface;
         private int mTextureID;
 
-        private volatile SurfaceTexture mSurfaceTexture;
+        public volatile SurfaceTexture mSurfaceTexture;
 
         private GlTextureFrameBuffer mGLFramebuffer;
 
         private TextureRenderer mOesTextureRenderer;
 
+        private int mWidth;
+        private int mHeight;
+
+        private EGLSurface previewEglSurface;
 
         public GLHandler(Looper looper) {
             super(looper);
         }
 
-        private void initEGLContext() {
+        @Override
+        public void handleMessage(@NonNull Message msg) {
+            switch (msg.what) {
+                case MSG_SETUP:
+                    int width = msg.arg1;
+                    int height = msg.arg2;
+                    initOffScreenGL();
+                    handleSetup(width, height);
+                    break;
+                case MSG_RELEASE:
+                    releaseEGLContext();
+                    break;
+                case MSG_DRAW_FRAME:
+                    handleDrawFrame();
+                    break;
+                case MSG_PREVIEW:
+                    Surface surface = (Surface) msg.obj;
+                    handlePreview(surface);
+                    break;
+                default:
+                    break;
+            }
+        }
+
+
+        private void initOffScreenGL() {
             if (mEGLDisplay != EGL14.EGL_NO_DISPLAY) {
                 return;
             }
+            Log.d(TAG, "------initOffScreenGL start----------");
             // 1. eglGetDisplay
             mEGLDisplay = EGL14.eglGetDisplay(EGL14.EGL_DEFAULT_DISPLAY);
             if (mEGLDisplay == EGL14.EGL_NO_DISPLAY) {
                 throw new EglError("eglGetDisplay failed:");
             }
+            Log.d(TAG, "initOffScreenGL: 1. EGL eglGetDisplay success");
             int[] version = new int[2];
             // 2. eglInitialize
             if (!EGL14.eglInitialize(mEGLDisplay, version, /*offset*/ 0, version, /*offset*/ 1)) {
                 throw new EglError("eglInitialize failed:");
             }
-
+            Log.d(TAG, "initOffScreenGL: 2. EGL eglInitialize success");
             int attribList[] = {
                     EGL14.EGL_RED_SIZE, 8,
                     EGL14.EGL_GREEN_SIZE, 8,
@@ -116,6 +166,8 @@ public class RenderManager {
             if (numConfigs[0] <= 0) {
                 throw new EglError("eglChooseConfig failed:");
             }
+            Log.d(TAG, "initOffScreenGL: 3. EGL eglChooseConfig success");
+
             mConfig = configs[0];
 
             int[] attribList2 = {
@@ -127,7 +179,7 @@ public class RenderManager {
             if (mEGLContext == EGL14.EGL_NO_CONTEXT) {
                 throw new EglError("eglCreateContext failed:");
             }
-
+            Log.d(TAG, "initOffScreenGL: 4. EGL eglCreateContext success");
             int[] attributes = new int[]{
                     EGL14.EGL_WIDTH, 1,
                     EGL14.EGL_HEIGHT, 1,
@@ -138,38 +190,24 @@ public class RenderManager {
             if (mStubEglSurface == null || mStubEglSurface == EGL14.EGL_NO_SURFACE) {
                 throw new EglError("eglCreatePbufferSurface failed:");
             }
+            Log.d(TAG, "initOffScreenGL: 5. EGL eglCreatePbufferSurface success");
+
             // 6. eglMakeCurrent
             boolean success = EGL14.eglMakeCurrent(mEGLDisplay, mStubEglSurface, mStubEglSurface, mEGLContext);
             if (!success) {
                 throw new EglError("eglMakeCurrent failed:");
             }
+            Log.d(TAG, "initOffScreenGL: 6. EGL eglMakeCurrent success");
 
-            // 7.glBindTexture
-            int[] textures = new int[1];
-            GLES20.glGenTextures(1, textures, 0);
-            mTextureID = textures[0];
-            GLES20.glBindTexture(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, mTextureID);
-            GLESTool.checkGlError("glBindTexture ");
-            GLES20.glTexParameterf(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, GLES20.GL_TEXTURE_MIN_FILTER,
-                    GLES20.GL_NEAREST);
-            GLES20.glTexParameterf(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, GLES20.GL_TEXTURE_MAG_FILTER,
-                    GLES20.GL_LINEAR);
-            GLES20.glTexParameteri(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, GLES20.GL_TEXTURE_WRAP_S,
-                    GLES20.GL_CLAMP_TO_EDGE);
-            GLES20.glTexParameteri(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, GLES20.GL_TEXTURE_WRAP_T,
-                    GLES20.GL_CLAMP_TO_EDGE);
-
-
+            Log.d(TAG, "------initOffScreenGL end------------");
         }
 
-        private void UnInitEGLContext() {
-
-        }
-
-        private void handleStart(Message msg) {
-            int width = msg.arg1;
-            int height = msg.arg2;
-
+        private void handleSetup(int width, int height) {
+            Log.d(TAG, "handleSetup: width = " + width + ",height = " + height);
+            mWidth = width;
+            mHeight = height;
+            // bindTexture
+            mTextureID = GLESTool.createOESTexture();
             mSurfaceTexture = new SurfaceTexture(mTextureID);
             mSurfaceTexture.setDefaultBufferSize(width, height);
 
@@ -177,25 +215,65 @@ public class RenderManager {
             mGLFramebuffer.allocateBuffers(width, height);
 
             mOesTextureRenderer = new TextureRenderer();
-            mOesTextureRenderer.init();
 
         }
 
+        private void handlePreview(Surface surface) {
+            int[] attribList = {
+                    EGL14.EGL_NONE
+            };
+            //  eglCreateWindowSurface
+            previewEglSurface = EGL14.eglCreateWindowSurface(mEGLDisplay, mConfig,
+                    surface, attribList, /*offset*/ 0);
+            GLESTool.checkGlError("handlePreview eglCreateWindowSurface");
 
-        @Override
-        public void handleMessage(@NonNull Message msg) {
-            switch (msg.what) {
-                case MSG_INIT:
-                    initEGLContext();
-                    break;
-                case MSG_UN_INIT:
-                    UnInitEGLContext();
-                    break;
-                case MSG_START:
-                    handleStart(msg);
-                    break;
+            // eglMakeCurrent
+            EGL14.eglMakeCurrent(mEGLDisplay, previewEglSurface, previewEglSurface, mEGLContext);
+            GLESTool.checkGlError("handlePreview eglMakeCurrent");
+        }
+
+        private void handleDrawFrame() {
+            mSurfaceTexture.updateTexImage();
+            // eglMakeCurrent
+            EGL14.eglMakeCurrent(mEGLDisplay, previewEglSurface, previewEglSurface, mEGLContext);
+            // draw
+            mOesTextureRenderer.draw(mTextureID, mWidth, mHeight);
+
+            // eglSwapBuffers
+            EGL14.eglSwapBuffers(mEGLDisplay, previewEglSurface);
+
+        }
+
+        private void releaseEGLContext() {
+            if (mEGLDisplay != EGL14.EGL_NO_DISPLAY) {
+                if (mGLFramebuffer != null) {
+                    mGLFramebuffer.release();
+                }
+                if (mOesTextureRenderer != null) {
+                    mOesTextureRenderer.release();
+                }
+                EGL14.eglMakeCurrent(mEGLDisplay, EGL14.EGL_NO_SURFACE, EGL14.EGL_NO_SURFACE,
+                        EGL14.EGL_NO_CONTEXT);
+                if (previewEglSurface != null) {
+                    EGL14.eglDestroySurface(mEGLDisplay, previewEglSurface);
+                }
+
+                if (mStubEglSurface != null) {
+                    EGL14.eglDestroySurface(mEGLDisplay, mStubEglSurface);
+                }
+                EGL14.eglDestroyContext(mEGLDisplay, mEGLContext);
+                EGL14.eglReleaseThread();
+                EGL14.eglTerminate(mEGLDisplay);
+
+                mConfig = null;
+                mEGLDisplay = EGL14.EGL_NO_DISPLAY;
+                mEGLContext = EGL14.EGL_NO_CONTEXT;
+                if (mSurfaceTexture != null) {
+                    mSurfaceTexture.release();
+                }
             }
         }
+
 
     }
 
