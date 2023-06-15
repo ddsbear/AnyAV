@@ -32,8 +32,8 @@ public class OpenGLActivity extends AppCompatActivity implements View.OnClickLis
     static {
         add("绘制图形", GLGraphicalActivity.class);
         add("绘制图片", GLImageActivity.class);
-        add("摄像机预览+Camera2", GLCameraActivity.class);
-        add("摄像机预览+OpenGL", RenderActivity.class);
+        add("绘制OES+Camera2", GLCameraActivity.class);
+        add("离屏OES+Camera2", RenderActivity.class);
     }
 
     @Override

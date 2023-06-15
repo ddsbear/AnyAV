@@ -7,7 +7,8 @@ import java.util.Arrays;
 
 public class OesFilter extends BaseFilter {
 
-    String vertexShaderCode = "attribute vec4 vPosition;\n" +
+    String vertexShaderCode =
+            "attribute vec4 vPosition;\n" +
             "attribute vec2 vCoord;\n" +
             "uniform mat4 vMatrix;\n" +
             "uniform mat4 vCoordMatrix;\n" +
@@ -17,7 +18,8 @@ public class OesFilter extends BaseFilter {
             "    textureCoordinate = (vCoordMatrix*vec4(vCoord,0,1)).xy;\n" +
             "}";
 
-    String fragmentShaderCode = "#extension GL_OES_EGL_image_external : require\n" +
+    String fragmentShaderCode =
+            "#extension GL_OES_EGL_image_external : require\n" +
             "precision mediump float;\n" +
             "varying vec2 textureCoordinate;\n" +
             "uniform samplerExternalOES vTexture;\n" +

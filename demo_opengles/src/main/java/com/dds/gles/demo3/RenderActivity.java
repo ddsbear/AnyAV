@@ -4,6 +4,7 @@ import android.Manifest;
 import android.app.Activity;
 import android.content.Context;
 import android.content.pm.PackageManager;
+import android.content.res.Configuration;
 import android.graphics.Color;
 import android.graphics.SurfaceTexture;
 import android.hardware.camera2.CameraAccessException;
@@ -35,6 +36,7 @@ import androidx.core.app.ActivityCompat;
 
 import com.dds.gles.R;
 import com.dds.gles.demo3.render.RenderManager;
+import com.dds.gles.demo3.view.AutoFitSurfaceView;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -45,13 +47,15 @@ import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 
 public class RenderActivity extends AppCompatActivity implements SurfaceHolder.Callback, SurfaceTexture.OnFrameAvailableListener {
-    private static final String TAG = "SurfaceViewCamera2Activity";
-    private SurfaceView mSurfaceView;
+    private static final String TAG = "RenderActivity";
+    private AutoFitSurfaceView mSurfaceView;
     private Surface mPreviewSurface;
 
-    private final Size mDesiredPreviewSize = new Size(1920, 1080);
-
+    private final Size mDesiredPreviewSize = new Size(1280, 720);
     private Size mPreviewSize;
+
+    private int mPreviewSurfaceWidth;
+    private int mPreviewSurfaceHeight;
 
     private final Semaphore mCameraOpenCloseLock = new Semaphore(1);
 
@@ -114,10 +118,13 @@ public class RenderActivity extends AppCompatActivity implements SurfaceHolder.C
         super.onDestroy();
     }
 
+    @Override
+    public void onConfigurationChanged(@NonNull Configuration newConfig) {
+        super.onConfigurationChanged(newConfig);
+    }
+
     private void initView() {
         mSurfaceView = findViewById(R.id.surface_container);
-
-
         mSurfaceView.getHolder().addCallback(this);
     }
 
@@ -144,7 +151,9 @@ public class RenderActivity extends AppCompatActivity implements SurfaceHolder.C
         characteristics = manager.getCameraCharacteristics(cameraId);
         StreamConfigurationMap map = characteristics.get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP);
         mPreviewSize = chooseOptimalSize(map.getOutputSizes(SurfaceTexture.class), mDesiredPreviewSize.getWidth(), mDesiredPreviewSize.getHeight(), mDesiredPreviewSize);
+        Log.d(TAG, "initCameraConfig chooseOptimalSize: width = " + mPreviewSize.getWidth() + ",height = " + mPreviewSize.getHeight());
         mCameraId = cameraId;
+        mSurfaceView.setAspectRatio(mPreviewSize.getWidth(), mPreviewSize.getHeight());
     }
 
     private void startBackgroundThread() {
@@ -168,7 +177,7 @@ public class RenderActivity extends AppCompatActivity implements SurfaceHolder.C
 
     private void setUpOutputSurfaces() {
         Log.d(TAG, "setUpOutputSurfaces: preview width = " + mPreviewSize.getWidth() + ",height = " + mPreviewSize.getHeight());
-        mRenderManager.setup(mPreviewSize.getWidth(), mPreviewSize.getHeight());
+        mRenderManager.setup(mPreviewSurfaceWidth, mPreviewSurfaceHeight);
         mRenderManager.startPreview(mPreviewSurface);
     }
 
@@ -232,7 +241,7 @@ public class RenderActivity extends AppCompatActivity implements SurfaceHolder.C
     private final CameraDevice.StateCallback mStateCallback = new CameraDevice.StateCallback() {
         @Override
         public void onOpened(CameraDevice cameraDevice) {
-            Log.d(TAG, "onOpened: " + cameraDevice.getId());
+            Log.d(TAG, "Camera onOpened: " + cameraDevice.getId());
             // This method is called when the camera is opened.  We start camera preview here.
             mCameraOpenCloseLock.release();
             mCameraDevice = cameraDevice;
@@ -241,6 +250,7 @@ public class RenderActivity extends AppCompatActivity implements SurfaceHolder.C
 
         @Override
         public void onDisconnected(CameraDevice cameraDevice) {
+            Log.d(TAG, "Camera onDisconnected: " + cameraDevice.getId());
             mCameraOpenCloseLock.release();
             cameraDevice.close();
             mCameraDevice = null;
@@ -248,6 +258,7 @@ public class RenderActivity extends AppCompatActivity implements SurfaceHolder.C
 
         @Override
         public void onError(CameraDevice cameraDevice, int error) {
+            Log.d(TAG, "Camera onError: " + cameraDevice.getId() + ",error = " + error);
             mCameraOpenCloseLock.release();
             cameraDevice.close();
             mCameraDevice = null;
@@ -267,7 +278,7 @@ public class RenderActivity extends AppCompatActivity implements SurfaceHolder.C
             mCameraDevice.createCaptureSession(Arrays.asList(surface), new CameraCaptureSession.StateCallback() {
                 @Override
                 public void onConfigured(@NonNull CameraCaptureSession session) {
-                    Log.d(TAG, "onConfigured: " + session.getInputSurface());
+                    Log.d(TAG, "Camera onConfigured: ");
                     if (null == mCameraDevice) {
                         return;
                     }
@@ -287,7 +298,7 @@ public class RenderActivity extends AppCompatActivity implements SurfaceHolder.C
 
                 @Override
                 public void onConfigureFailed(@NonNull CameraCaptureSession session) {
-                    Log.d(TAG, "onConfigureFailed: " + mCameraId);
+                    Log.d(TAG, "Camera onConfigureFailed: " + mCameraId);
 
                 }
             }, null);
@@ -334,14 +345,17 @@ public class RenderActivity extends AppCompatActivity implements SurfaceHolder.C
     @Override
     public void surfaceCreated(@NonNull SurfaceHolder holder) {
         Log.d(TAG, "surfaceCreated: ");
-        mPreviewSurface = holder.getSurface();
-        setUpOutputSurfaces();
-        openCamera();
+
     }
 
     @Override
     public void surfaceChanged(@NonNull SurfaceHolder holder, int format, int width, int height) {
         Log.d(TAG, "surfaceChanged: size = " + width + "x" + height + ", fmt = " + format);
+        mPreviewSurface = holder.getSurface();
+        mPreviewSurfaceWidth = width;
+        mPreviewSurfaceHeight = height;
+        setUpOutputSurfaces();
+        openCamera();
     }
 
     @Override

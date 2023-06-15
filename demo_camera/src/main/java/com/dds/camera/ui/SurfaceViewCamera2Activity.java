@@ -220,6 +220,7 @@ public class SurfaceViewCamera2Activity extends AppCompatActivity implements Sur
         mPreviewSize = chooseOptimalSize(map.getOutputSizes(SurfaceTexture.class), mDesiredPreviewSize.getWidth(), mDesiredPreviewSize.getHeight(), mDesiredPreviewSize);
         mCameraId = cameraId;
         orientationLiveData = new OrientationLiveData(this, characteristics);
+        mSurfaceView.setAspectRatio(mPreviewSize.getWidth(), mPreviewSize.getHeight());
     }
 
     private void startBackgroundThread() {
@@ -455,7 +456,6 @@ public class SurfaceViewCamera2Activity extends AppCompatActivity implements Sur
     @Override
     public void surfaceCreated(@NonNull SurfaceHolder holder) {
         mPreviewSurface = holder.getSurface();
-        mSurfaceView.setAspectRatio(mPreviewSize.getWidth(), mPreviewSize.getHeight());
         mHandler.post(this::openCamera);
     }
 

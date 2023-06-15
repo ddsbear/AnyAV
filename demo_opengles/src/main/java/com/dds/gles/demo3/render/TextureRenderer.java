@@ -1,8 +1,10 @@
 package com.dds.gles.demo3.render;
 
+import android.graphics.SurfaceTexture;
 import android.opengl.GLES11Ext;
 import android.opengl.GLES20;
 import android.opengl.Matrix;
+import android.util.Log;
 
 import java.nio.FloatBuffer;
 
@@ -28,21 +30,39 @@ public class TextureRenderer extends BaseTextureRender {
 
     public TextureRenderer() {
         super();
+    }
+
+    public void init() {
         Matrix.setIdentityM(mSTMatrix, 0);
         mGLShader = new GlShader(VERTEX_SHADER_OES, FRAGMENT_SHADER_OES);
         maPositionHandle = mGLShader.getAttribLocation("aPosition");
         maTextureHandle = mGLShader.getAttribLocation("aTextureCoord");
         muMVPMatrixHandle = mGLShader.getUniformLocation("uMVPMatrix");
         muSTMatrixHandle = mGLShader.getUniformLocation("uSTMatrix");
+        Log.d(TAG, "init: ");
     }
 
+    public void draw(SurfaceTexture mSurfaceTexture, int textureId, int width, int height) {
 
-    public void draw(int textureId, int width, int height) {
+        mSurfaceTexture.getTransformMatrix(mSTMatrix);
+
+        Matrix.translateM(mSTMatrix, 0, 0.5f, 0.5f, 0);
+        Matrix.rotateM(mSTMatrix, 0, 270, 0.0f, 0.0f, 1.0f);
+        Matrix.translateM(mSTMatrix, 0, -0.5f, -0.5f, 0);
+
+
+
         Matrix.setIdentityM(mMVPMatrix, 0);
+
+
 
         GLES20.glViewport(0, 0, width, height);
 
+
+
         mGLShader.useProgram();
+
+
 
         // bindTexture
         GLES20.glActiveTexture(GLES20.GL_TEXTURE0);
@@ -68,7 +88,7 @@ public class TextureRenderer extends BaseTextureRender {
         // Draw the textures.
         GLES20.glDrawArrays(GLES20.GL_TRIANGLE_STRIP, 0, 4);
         GLESTool.checkGlError("glDrawArrays");
-
+//        Log.d(TAG, "draw: " + mSurfaceTexture);
     }
 
     public void release() {

@@ -1,6 +1,7 @@
 package com.dds.gles.demo3.render;
 
 import android.opengl.GLES20;
+import android.opengl.GLUtils;
 import android.util.Log;
 
 import java.nio.FloatBuffer;
@@ -65,28 +66,6 @@ public class GlShader {
             throw new RuntimeException("Could not locate '" + label + "' in program");
         }
         return location;
-    }
-
-    /**
-     * Enable and upload a vertex array for attribute `label`. The vertex data is specified in
-     * `buffer` with `dimension` number of components per vertex.
-     */
-    public void setVertexAttribArray(String label, int dimension, FloatBuffer buffer) {
-        setVertexAttribArray(label, dimension, 0, buffer);
-    }
-
-    /**
-     * Enable and upload a vertex array for attribute `label`. The vertex data is specified in
-     * `buffer` with `dimension` number of components per vertex and specified `stride`.
-     */
-    public void setVertexAttribArray(String label, int dimension, int stride, FloatBuffer buffer) {
-        if (program == -1) {
-            throw new RuntimeException("The program has been released");
-        }
-        int location = getAttribLocation(label);
-        GLES20.glEnableVertexAttribArray(location);
-        GLES20.glVertexAttribPointer(location, dimension, GLES20.GL_FLOAT, false, stride, buffer);
-        GLESTool.checkGlError("setVertexAttribArray");
     }
 
     public int getUniformLocation(String label) {
