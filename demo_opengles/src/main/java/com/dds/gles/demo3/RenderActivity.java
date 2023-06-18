@@ -3,8 +3,10 @@ package com.dds.gles.demo3;
 import android.Manifest;
 import android.app.Activity;
 import android.content.Context;
+import android.content.pm.ActivityInfo;
 import android.content.pm.PackageManager;
 import android.content.res.Configuration;
+import android.content.res.Resources;
 import android.graphics.Color;
 import android.graphics.SurfaceTexture;
 import android.hardware.camera2.CameraAccessException;
@@ -22,10 +24,8 @@ import android.os.Handler;
 import android.os.HandlerThread;
 import android.util.Log;
 import android.util.Size;
-import android.util.SparseIntArray;
 import android.view.Surface;
 import android.view.SurfaceHolder;
-import android.view.SurfaceView;
 import android.view.View;
 import android.view.Window;
 import android.view.WindowManager;
@@ -35,6 +35,8 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 
 import com.dds.gles.R;
+import com.dds.gles.demo3.render.GLESTool;
+import com.dds.gles.demo3.render.OrientationLiveData;
 import com.dds.gles.demo3.render.RenderManager;
 import com.dds.gles.demo3.view.AutoFitSurfaceView;
 
@@ -43,6 +45,8 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 
@@ -74,15 +78,7 @@ public class RenderActivity extends AppCompatActivity implements SurfaceHolder.C
     private CameraManager manager;
     private CameraCharacteristics characteristics;
 
-
-    private static final SparseIntArray ORIENTATIONS = new SparseIntArray();
-
-    static {
-        ORIENTATIONS.append(Surface.ROTATION_0, 90);
-        ORIENTATIONS.append(Surface.ROTATION_90, 0);
-        ORIENTATIONS.append(Surface.ROTATION_180, 270);
-        ORIENTATIONS.append(Surface.ROTATION_270, 180);
-    }
+    private OrientationLiveData orientationLiveData;
 
     private RenderManager mRenderManager;
 
@@ -90,23 +86,31 @@ public class RenderActivity extends AppCompatActivity implements SurfaceHolder.C
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setStatusBarOrScreenStatus(this);
+        if (!GLESTool.isTablet(this)) {
+            setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
+        }
         setContentView(R.layout.activity_render);
+        Log.d(TAG, "onCreate: ");
         initView();
         initListener();
-        initCameraManager();
 
         mRenderManager = new RenderManager();
+        initCameraManager();
+
+
     }
 
     @Override
     protected void onResume() {
         super.onResume();
+        Log.d(TAG, "onResume: ");
         startBackgroundThread();
     }
 
     @Override
     protected void onPause() {
         super.onPause();
+        Log.d(TAG, "onPause: ");
         closeCamera();
         stopBackgroundThread();
 
@@ -116,11 +120,20 @@ public class RenderActivity extends AppCompatActivity implements SurfaceHolder.C
     @Override
     protected void onDestroy() {
         super.onDestroy();
+        Log.d(TAG, "onDestroy: ");
     }
 
     @Override
     public void onConfigurationChanged(@NonNull Configuration newConfig) {
         super.onConfigurationChanged(newConfig);
+        Log.d(TAG, "onConfigurationChanged: ");
+        if (GLESTool.isTablet(this)) {
+            Integer dataValue = orientationLiveData.getValue();
+            if (dataValue != null) {
+                mRenderManager.setRotation(dataValue);
+            }
+        }
+
     }
 
     private void initView() {
@@ -154,6 +167,17 @@ public class RenderActivity extends AppCompatActivity implements SurfaceHolder.C
         Log.d(TAG, "initCameraConfig chooseOptimalSize: width = " + mPreviewSize.getWidth() + ",height = " + mPreviewSize.getHeight());
         mCameraId = cameraId;
         mSurfaceView.setAspectRatio(mPreviewSize.getWidth(), mPreviewSize.getHeight());
+
+        orientationLiveData = new OrientationLiveData(this, characteristics);
+        orientationLiveData.observe(this, integer -> {
+
+            Log.d(TAG, "orientationLiveData orientation = " + integer);
+//            if (GLESTool.isTablet(this)) {
+//                if (integer != null) {
+//                    mRenderManager.setRotation(integer);
+//                }
+//            }
+        });
     }
 
     private void startBackgroundThread() {
@@ -269,7 +293,8 @@ public class RenderActivity extends AppCompatActivity implements SurfaceHolder.C
     private void createCameraPreviewSession() {
         try {
             Log.d(TAG, "createCameraPreviewSession: ");
-            SurfaceTexture texture = mRenderManager.getSurfaceTexture();
+            CompletableFuture<SurfaceTexture> future = mRenderManager.getSurfaceTexture();
+            SurfaceTexture texture = future.get();
             texture.setDefaultBufferSize(mPreviewSize.getWidth(), mPreviewSize.getHeight());
             texture.setOnFrameAvailableListener(this);
             Surface surface = new Surface(texture);
@@ -303,7 +328,7 @@ public class RenderActivity extends AppCompatActivity implements SurfaceHolder.C
                 }
             }, null);
 
-        } catch (CameraAccessException e) {
+        } catch (CameraAccessException | ExecutionException | InterruptedException e) {
             throw new RuntimeException(e);
         }
     }
@@ -345,17 +370,23 @@ public class RenderActivity extends AppCompatActivity implements SurfaceHolder.C
     @Override
     public void surfaceCreated(@NonNull SurfaceHolder holder) {
         Log.d(TAG, "surfaceCreated: ");
+        mPreviewSurface = holder.getSurface();
+        setUpOutputSurfaces();
+        openCamera();
 
     }
 
     @Override
     public void surfaceChanged(@NonNull SurfaceHolder holder, int format, int width, int height) {
         Log.d(TAG, "surfaceChanged: size = " + width + "x" + height + ", fmt = " + format);
-        mPreviewSurface = holder.getSurface();
         mPreviewSurfaceWidth = width;
         mPreviewSurfaceHeight = height;
-        setUpOutputSurfaces();
-        openCamera();
+        int screenHeight = Resources.getSystem().getDisplayMetrics().heightPixels;
+        int screenWidth = Resources.getSystem().getDisplayMetrics().widthPixels;
+        Log.d(TAG, "surfaceChanged: screenWidth = " + screenWidth + ",screenHeight = " + screenHeight);
+        mRenderManager.setResolution(mPreviewSurfaceWidth, mPreviewSurfaceHeight);
+
+
     }
 
     @Override

@@ -16,9 +16,11 @@ import android.view.Surface;
 
 import androidx.annotation.NonNull;
 
+import java.util.concurrent.CompletableFuture;
+
 public class RenderManager {
     private static final String TAG = "RenderManager";
-    private HandlerThread mGLHandlerThread;
+    private final HandlerThread mGLHandlerThread;
     private final GLHandler mHandler;
 
     private final Object syncOp = new Object();
@@ -29,8 +31,8 @@ public class RenderManager {
         mHandler = new GLHandler(mGLHandlerThread.getLooper());
     }
 
-    public SurfaceTexture getSurfaceTexture() {
-        return mHandler.mSurfaceTexture;
+    public CompletableFuture<SurfaceTexture> getSurfaceTexture() {
+        return mHandler.mSurfaceFuture;
     }
 
     public void setup(int width, int height) {
@@ -47,6 +49,21 @@ public class RenderManager {
             mHandler.sendMessage(mHandler.obtainMessage(GLHandler.MSG_PREVIEW, surface));
         }
 
+    }
+
+    public void setRotation(int rotation) {
+        synchronized (syncOp) {
+            Log.d(TAG, "setRotation: " + rotation);
+            mHandler.removeMessages(GLHandler.MSG_ROTATION);
+            mHandler.sendMessage(mHandler.obtainMessage(GLHandler.MSG_ROTATION, rotation, 0));
+        }
+    }
+
+    public void setResolution(int width, int height) {
+        synchronized (syncOp) {
+            mHandler.removeMessages(GLHandler.MSG_RESOLUTION);
+            mHandler.sendMessage(mHandler.obtainMessage(GLHandler.MSG_RESOLUTION, width, height));
+        }
     }
 
     public void drawFrame() {
@@ -81,6 +98,9 @@ public class RenderManager {
         static final int MSG_RELEASE = 0x002;
         static final int MSG_DRAW_FRAME = 0x004;
         static final int MSG_PREVIEW = 0x005;
+        static final int MSG_ROTATION = 0x006;
+
+        static final int MSG_RESOLUTION = 0x007;
 
         private EGLDisplay mEGLDisplay = EGL14.EGL_NO_DISPLAY;
         private EGLConfig mConfig;
@@ -89,6 +109,8 @@ public class RenderManager {
         private int mTextureID;
 
         public volatile SurfaceTexture mSurfaceTexture;
+
+        private final CompletableFuture<SurfaceTexture> mSurfaceFuture;
 
         private TextureRenderer mOesTextureRenderer;
 
@@ -99,6 +121,7 @@ public class RenderManager {
 
         public GLHandler(Looper looper) {
             super(looper);
+            mSurfaceFuture = new CompletableFuture<>();
         }
 
         @Override
@@ -120,10 +143,17 @@ public class RenderManager {
                     Surface surface = (Surface) msg.obj;
                     handleStartPreview(surface);
                     break;
+                case MSG_ROTATION:
+                    handleSetRotation(msg.arg1);
+                    break;
+                case MSG_RESOLUTION:
+                    handleSetResolution(msg.arg1, msg.arg2);
+                    break;
                 default:
                     break;
             }
         }
+
 
         private void initOffScreenGL() {
             if (mEGLDisplay != EGL14.EGL_NO_DISPLAY) {
@@ -207,20 +237,25 @@ public class RenderManager {
             Log.d(TAG, "handleSetup: mSurfaceTexture = " + mSurfaceTexture);
             mOesTextureRenderer = new TextureRenderer();
             mOesTextureRenderer.init();
+            mSurfaceFuture.complete(mSurfaceTexture);
         }
 
         private void handleStartPreview(Surface surface) {
-            int[] attribList = {
-                    EGL14.EGL_NONE
-            };
-            //  eglCreateWindowSurface
-            previewEglSurface = EGL14.eglCreateWindowSurface(mEGLDisplay, mConfig,
-                    surface, attribList, /*offset*/ 0);
-            GLESTool.checkGlError("handleStartPreview 1. eglCreateWindowSurface");
-            // eglMakeCurrent
-            EGL14.eglMakeCurrent(mEGLDisplay, previewEglSurface, previewEglSurface, mEGLContext);
-            GLESTool.checkGlError("handleStartPreview 2. eglMakeCurrent");
+            if (previewEglSurface == null) {
+                int[] attribList = {
+                        EGL14.EGL_NONE
+                };
+                //  eglCreateWindowSurface
+                previewEglSurface = EGL14.eglCreateWindowSurface(mEGLDisplay, mConfig,
+                        surface, attribList, /*offset*/ 0);
+                GLESTool.checkGlError("handleStartPreview 1. eglCreateWindowSurface");
+                // eglMakeCurrent
+                EGL14.eglMakeCurrent(mEGLDisplay, previewEglSurface, previewEglSurface, mEGLContext);
+                GLESTool.checkGlError("handleStartPreview 2. eglMakeCurrent");
+            }
+
         }
+
 
         private void handleDrawFrame() {
             mSurfaceTexture.updateTexImage();
@@ -232,6 +267,20 @@ public class RenderManager {
             EGL14.eglSwapBuffers(mEGLDisplay, previewEglSurface);
 
         }
+
+        private void handleSetRotation(int rotation) {
+            Log.d(TAG, "handleSetRotation1: rotation " + rotation);
+            if (mOesTextureRenderer != null) {
+                Log.d(TAG, "handleSetRotation2: rotation " + rotation);
+                mOesTextureRenderer.setRotation(rotation);
+            }
+        }
+
+        private void handleSetResolution(int width, int height) {
+            this.mWidth = width;
+            this.mHeight = height;
+        }
+
 
         private void releaseEGLContext() {
             if (mEGLDisplay != EGL14.EGL_NO_DISPLAY) {

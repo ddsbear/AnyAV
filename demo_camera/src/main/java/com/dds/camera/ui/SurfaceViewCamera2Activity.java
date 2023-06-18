@@ -13,7 +13,6 @@ import android.hardware.camera2.CameraCaptureSession;
 import android.hardware.camera2.CameraCharacteristics;
 import android.hardware.camera2.CameraDevice;
 import android.hardware.camera2.CameraManager;
-import android.hardware.camera2.CameraMetadata;
 import android.hardware.camera2.CaptureRequest;
 import android.hardware.camera2.CaptureResult;
 import android.hardware.camera2.TotalCaptureResult;
@@ -47,7 +46,6 @@ import com.dds.camera.view.AutoFitSurfaceView;
 import com.dds.fbo.R;
 
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -56,7 +54,6 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
-import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 
@@ -168,7 +165,7 @@ public class SurfaceViewCamera2Activity extends AppCompatActivity implements Sur
     }
 
     private void takePicture() {
-        mImageReader.setOnImageAvailableListener((ImageReader.OnImageAvailableListener) reader -> {
+        mImageReader.setOnImageAvailableListener(reader -> {
             Image image = reader.acquireNextImage();
             File file = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES), String.format("picture_%s.jpg", System.currentTimeMillis()));
             Log.d(TAG, "takePicture: " + file.getAbsolutePath());
@@ -221,6 +218,10 @@ public class SurfaceViewCamera2Activity extends AppCompatActivity implements Sur
         mCameraId = cameraId;
         orientationLiveData = new OrientationLiveData(this, characteristics);
         mSurfaceView.setAspectRatio(mPreviewSize.getWidth(), mPreviewSize.getHeight());
+
+        orientationLiveData.observe(this, integer -> {
+            Log.d(TAG, "orientationLiveData orientation = " + integer);
+        });
     }
 
     private void startBackgroundThread() {

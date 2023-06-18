@@ -28,6 +28,8 @@ public class TextureRenderer extends BaseTextureRender {
 
     private GlShader mGLShader;
 
+    private int mRotation = -1;
+
     public TextureRenderer() {
         super();
     }
@@ -46,23 +48,18 @@ public class TextureRenderer extends BaseTextureRender {
 
         mSurfaceTexture.getTransformMatrix(mSTMatrix);
 
-        Matrix.translateM(mSTMatrix, 0, 0.5f, 0.5f, 0);
-        Matrix.rotateM(mSTMatrix, 0, 270, 0.0f, 0.0f, 1.0f);
-        Matrix.translateM(mSTMatrix, 0, -0.5f, -0.5f, 0);
-
-
+        if (mRotation != -1) {
+            Matrix.translateM(mSTMatrix, 0, 0.5f, 0.5f, 0);
+            Matrix.rotateM(mSTMatrix, 0, mRotation - 90, 0.0f, 0.0f, 1.0f);
+            Matrix.translateM(mSTMatrix, 0, -0.5f, -0.5f, 0);
+        }
 
         Matrix.setIdentityM(mMVPMatrix, 0);
-
-
 
         GLES20.glViewport(0, 0, width, height);
 
 
-
         mGLShader.useProgram();
-
-
 
         // bindTexture
         GLES20.glActiveTexture(GLES20.GL_TEXTURE0);
@@ -89,6 +86,10 @@ public class TextureRenderer extends BaseTextureRender {
         GLES20.glDrawArrays(GLES20.GL_TRIANGLE_STRIP, 0, 4);
         GLESTool.checkGlError("glDrawArrays");
 //        Log.d(TAG, "draw: " + mSurfaceTexture);
+    }
+
+    public void setRotation(int rotation) {
+        this.mRotation = rotation;
     }
 
     public void release() {
