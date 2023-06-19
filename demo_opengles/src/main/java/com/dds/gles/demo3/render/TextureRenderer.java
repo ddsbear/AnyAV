@@ -41,18 +41,16 @@ public class TextureRenderer extends BaseTextureRender {
         maTextureHandle = mGLShader.getAttribLocation("aTextureCoord");
         muMVPMatrixHandle = mGLShader.getUniformLocation("uMVPMatrix");
         muSTMatrixHandle = mGLShader.getUniformLocation("uSTMatrix");
-        Log.d(TAG, "init: ");
     }
 
     public void draw(SurfaceTexture mSurfaceTexture, int textureId, int width, int height) {
 
         mSurfaceTexture.getTransformMatrix(mSTMatrix);
 
-        if (mRotation != -1) {
-            Matrix.translateM(mSTMatrix, 0, 0.5f, 0.5f, 0);
-            Matrix.rotateM(mSTMatrix, 0, mRotation - 90, 0.0f, 0.0f, 1.0f);
-            Matrix.translateM(mSTMatrix, 0, -0.5f, -0.5f, 0);
-        }
+        // rotation
+        Matrix.translateM(mSTMatrix, 0, 0.5f, 0.5f, 0);
+        Matrix.rotateM(mSTMatrix, 0, mRotation - 90, 0.0f, 0.0f, 1.0f);
+        Matrix.translateM(mSTMatrix, 0, -0.5f, -0.5f, 0);
 
         Matrix.setIdentityM(mMVPMatrix, 0);
 

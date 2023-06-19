@@ -82,6 +82,8 @@ public class RenderActivity extends AppCompatActivity implements SurfaceHolder.C
 
     private RenderManager mRenderManager;
 
+    private boolean isConfigOrientated;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -96,8 +98,6 @@ public class RenderActivity extends AppCompatActivity implements SurfaceHolder.C
 
         mRenderManager = new RenderManager();
         initCameraManager();
-
-
     }
 
     @Override
@@ -170,13 +170,12 @@ public class RenderActivity extends AppCompatActivity implements SurfaceHolder.C
 
         orientationLiveData = new OrientationLiveData(this, characteristics);
         orientationLiveData.observe(this, integer -> {
-
             Log.d(TAG, "orientationLiveData orientation = " + integer);
-//            if (GLESTool.isTablet(this)) {
-//                if (integer != null) {
-//                    mRenderManager.setRotation(integer);
-//                }
-//            }
+            if (GLESTool.isTablet(this) && !isConfigOrientated) {
+                mRenderManager.setRotation(integer);
+                isConfigOrientated = true;
+            }
+
         });
     }
 
@@ -318,6 +317,9 @@ public class RenderActivity extends AppCompatActivity implements SurfaceHolder.C
                         mCaptureSession.setRepeatingRequest(captureRequest, mCaptureCallback, mBackgroundHandler);
                     } catch (CameraAccessException e) {
                         throw new RuntimeException(e);
+                    }
+                    if (GLESTool.isTablet(RenderActivity.this) && orientationLiveData.getValue() != null) {
+                        mRenderManager.setRotation(orientationLiveData.getValue());
                     }
                 }
 
