@@ -9,18 +9,21 @@
         tools:ignore="ScopedStorage" />
 
     <uses-feature android:name="android.hardware.camera" />
-    <uses-feature android:name="android.hardware.camera.autofocus" />
-
-    <!--    GLSL ES Version | OpenGL ES version | Shader Preprocessor | Release Date-->
-    <!--    1.00 ES           2.0                 #version 100          2007-03-05-->
-    <!--    3.00 ES           3.0                 #version 300 es       2012-08-06-->
-    <!--    3.10 ES           3.1                 #version 310 es       2014-03-17-->
-    <!--    3.20 ES           3.2                 #version 320 es       2015-08-10-->
+    <uses-feature android:name="android.hardware.camera.autofocus" /> <!-- GLSL ES Version | OpenGL ES version | Shader Preprocessor | Release Date -->
+    <!-- 1.00 ES           2.0                 #version 100          2007-03-05 -->
+    <!-- 3.00 ES           3.0                 #version 300 es       2012-08-06 -->
+    <!-- 3.10 ES           3.1                 #version 310 es       2014-03-17 -->
+    <!-- 3.20 ES           3.2                 #version 320 es       2015-08-10 -->
     <uses-feature
         android:glEsVersion="0x00030000"
         android:required="true" />
 
     <application>
+        <activity
+            android:name=".demo3.Render2Activity"
+            android:configChanges="orientation|screenSize|screenLayout|keyboardHidden|mcc|mnc|navigation|keyboard"
+            android:exported="false"
+            android:windowSoftInputMode="stateAlwaysHidden|adjustPan" />
         <activity
             android:name=".demo3.RenderActivity"
             android:configChanges="orientation|screenSize|screenLayout|keyboardHidden|mcc|mnc|navigation|keyboard"

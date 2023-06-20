@@ -19,8 +19,7 @@ public class GlShader {
         int[] compileStatus = new int[]{GLES20.GL_FALSE};
         GLES20.glGetShaderiv(shader, GLES20.GL_COMPILE_STATUS, compileStatus, 0);
         if (compileStatus[0] != GLES20.GL_TRUE) {
-            Log.e(
-                    TAG, "Compile error " + GLES20.glGetShaderInfoLog(shader) + " in shader:\n" + source);
+            Log.e(TAG, "Compile error " + GLES20.glGetShaderInfoLog(shader) + " in shader:\n" + source);
             throw new RuntimeException(GLES20.glGetShaderInfoLog(shader));
         }
         GLESTool.checkGlError("compileShader");

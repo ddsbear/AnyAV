@@ -5,6 +5,7 @@ import android.util.AttributeSet;
 import android.view.SurfaceView;
 
 public class AutoFitSurfaceView extends SurfaceView {
+
     private float mAspectRatio;
 
     public AutoFitSurfaceView(Context context) {

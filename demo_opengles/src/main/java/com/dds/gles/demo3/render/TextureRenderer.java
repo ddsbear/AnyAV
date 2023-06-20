@@ -28,7 +28,7 @@ public class TextureRenderer extends BaseTextureRender {
 
     private GlShader mGLShader;
 
-    private int mRotation = -1;
+    private int mRotation = 0;
 
     public TextureRenderer() {
         super();
@@ -47,6 +47,7 @@ public class TextureRenderer extends BaseTextureRender {
 
         mSurfaceTexture.getTransformMatrix(mSTMatrix);
 
+        Log.d(TAG, "draw: rotation = " + (mRotation - 90) + ",width = " + width + ",height = " + height);
         // rotation
         Matrix.translateM(mSTMatrix, 0, 0.5f, 0.5f, 0);
         Matrix.rotateM(mSTMatrix, 0, mRotation - 90, 0.0f, 0.0f, 1.0f);
@@ -66,12 +67,12 @@ public class TextureRenderer extends BaseTextureRender {
         FloatBuffer triangleVertices = mRegularTriangleVertices;
         triangleVertices.position(TRIANGLE_VERTICES_DATA_POS_OFFSET);
 
-        // draw position
+        // draw vertex
         GLES20.glEnableVertexAttribArray(maPositionHandle);
         GLES20.glVertexAttribPointer(maPositionHandle, VERTEX_POS_SIZE, GLES20.GL_FLOAT,
                 false, TRIANGLE_VERTICES_DATA_STRIDE_BYTES, triangleVertices);
 
-        // draw aTextureCoord
+        // draw fragment
         triangleVertices.position(TRIANGLE_VERTICES_DATA_UV_OFFSET);
         GLES20.glEnableVertexAttribArray(maTextureHandle);
         GLES20.glVertexAttribPointer(maTextureHandle, VERTEX_UV_SIZE, GLES20.GL_FLOAT, false, TRIANGLE_VERTICES_DATA_STRIDE_BYTES, triangleVertices);

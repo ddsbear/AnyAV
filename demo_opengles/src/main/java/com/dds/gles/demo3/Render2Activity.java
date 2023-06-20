@@ -1,5 +1,9 @@
 package com.dds.gles.demo3;
 
+import androidx.annotation.NonNull;
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.app.ActivityCompat;
+
 import android.Manifest;
 import android.app.Activity;
 import android.content.Context;
@@ -8,7 +12,6 @@ import android.content.pm.PackageManager;
 import android.content.res.Configuration;
 import android.content.res.Resources;
 import android.graphics.Color;
-import android.graphics.Rect;
 import android.graphics.SurfaceTexture;
 import android.hardware.camera2.CameraAccessException;
 import android.hardware.camera2.CameraCaptureSession;
@@ -23,26 +26,23 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.HandlerThread;
-import android.util.DisplayMetrics;
 import android.util.Log;
 import android.util.Size;
-import android.view.Gravity;
 import android.view.Surface;
 import android.view.SurfaceHolder;
+import android.view.TextureView;
 import android.view.View;
+import android.view.ViewGroup;
 import android.view.Window;
 import android.view.WindowManager;
-import android.widget.FrameLayout;
-
-import androidx.annotation.NonNull;
-import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.app.ActivityCompat;
+import android.widget.RelativeLayout;
 
 import com.dds.gles.R;
 import com.dds.gles.demo3.render.GLESTool;
 import com.dds.gles.demo3.render.OrientationLiveData;
 import com.dds.gles.demo3.render.RenderManager;
 import com.dds.gles.demo3.view.AutoFitSurfaceView;
+import com.dds.gles.demo3.view.AutoFitTextureView;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -54,9 +54,10 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 
-public class RenderActivity extends AppCompatActivity implements SurfaceHolder.Callback, SurfaceTexture.OnFrameAvailableListener {
-    private static final String TAG = "RenderActivity";
-    private AutoFitSurfaceView mSurfaceView;
+public class Render2Activity extends AppCompatActivity implements TextureView.SurfaceTextureListener, SurfaceTexture.OnFrameAvailableListener {
+
+    private static final String TAG = "Render2Activity";
+    private AutoFitTextureView mSurfaceView;
     private Surface mPreviewSurface;
 
     private final Size mDesiredPreviewSize = new Size(1280, 720);
@@ -95,7 +96,7 @@ public class RenderActivity extends AppCompatActivity implements SurfaceHolder.C
         if (!GLESTool.isTablet(this)) {
             setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
         }
-        setContentView(R.layout.activity_render);
+        setContentView(R.layout.activity_render2);
         Log.d(TAG, "onCreate: ");
         initView();
         initListener();
@@ -131,14 +132,6 @@ public class RenderActivity extends AppCompatActivity implements SurfaceHolder.C
     public void onConfigurationChanged(@NonNull Configuration newConfig) {
         super.onConfigurationChanged(newConfig);
         Log.d(TAG, "onConfigurationChanged: ");
-
-        Size layoutSize = findLayoutSize(this, mPreviewSize);
-        FrameLayout.LayoutParams params = (FrameLayout.LayoutParams) mSurfaceView.getLayoutParams();
-        params.width = (int) layoutSize.getWidth();
-        params.height = (int) layoutSize.getHeight();
-        params.gravity = Gravity.CENTER;
-
-
         if (GLESTool.isTablet(this)) {
             Integer dataValue = orientationLiveData.getValue();
             if (dataValue != null) {
@@ -150,7 +143,7 @@ public class RenderActivity extends AppCompatActivity implements SurfaceHolder.C
 
     private void initView() {
         mSurfaceView = findViewById(R.id.surface_container);
-        mSurfaceView.getHolder().addCallback(this);
+        mSurfaceView.setSurfaceTextureListener(this);
     }
 
     private void initListener() {
@@ -178,12 +171,9 @@ public class RenderActivity extends AppCompatActivity implements SurfaceHolder.C
         mPreviewSize = chooseOptimalSize(map.getOutputSizes(SurfaceTexture.class), mDesiredPreviewSize.getWidth(), mDesiredPreviewSize.getHeight(), mDesiredPreviewSize);
         Log.d(TAG, "initCameraConfig chooseOptimalSize: width = " + mPreviewSize.getWidth() + ",height = " + mPreviewSize.getHeight());
         mCameraId = cameraId;
+
         mSurfaceView.setAspectRatio(mPreviewSize.getWidth(), mPreviewSize.getHeight());
-        Size layoutSize = findLayoutSize(this, mPreviewSize);
-        FrameLayout.LayoutParams params = (FrameLayout.LayoutParams) mSurfaceView.getLayoutParams();
-        params.width = (int) layoutSize.getWidth();
-        params.height = (int) layoutSize.getHeight();
-        params.gravity = Gravity.CENTER;
+
         orientationLiveData = new OrientationLiveData(this, characteristics);
         orientationLiveData.observe(this, integer -> {
             Log.d(TAG, "orientationLiveData orientation = " + integer);
@@ -191,26 +181,9 @@ public class RenderActivity extends AppCompatActivity implements SurfaceHolder.C
                 mRenderManager.setRotation(integer);
                 isConfigOrientated = true;
             }
+
         });
     }
-
-
-    public static Size findLayoutSize(Context context, Size targetSize) {
-        DisplayMetrics metrics = context.getResources().getDisplayMetrics();
-        int displayWidth = metrics.widthPixels;
-        int displayHeight = metrics.heightPixels;
-
-        Log.d(TAG, "display " + displayWidth + "x" + displayHeight);
-        float ratio = (float) targetSize.getWidth() / targetSize.getHeight();
-        if (displayHeight > displayWidth) {
-            displayHeight = (int) (displayWidth * ratio);
-        } else {
-            displayWidth = (int) (displayHeight * ratio);
-        }
-        Log.d(TAG, "findBestLayoutSize: " + displayWidth + "x" + displayHeight);
-        return new Size(displayWidth, displayHeight);
-    }
-
 
     private void startBackgroundThread() {
         mBackgroundThread = new HandlerThread("CameraBackground");
@@ -242,7 +215,7 @@ public class RenderActivity extends AppCompatActivity implements SurfaceHolder.C
             if (!mCameraOpenCloseLock.tryAcquire(2500, TimeUnit.MILLISECONDS)) {
                 throw new RuntimeException("Time out waiting to lock camera opening.");
             }
-            if (ActivityCompat.checkSelfPermission(RenderActivity.this, Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
+            if (ActivityCompat.checkSelfPermission(Render2Activity.this, Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
                 return;
             }
             manager.openCamera(mCameraId, mStateCallback, mBackgroundHandler);
@@ -266,8 +239,10 @@ public class RenderActivity extends AppCompatActivity implements SurfaceHolder.C
                 mCameraDevice.close();
                 mCameraDevice = null;
             }
-        } catch (Exception e) {
-            Log.e(TAG, "closeCamera: " + e);
+        } catch (InterruptedException e) {
+            throw new RuntimeException("Interrupted while trying to lock camera closing.", e);
+        } catch (CameraAccessException e) {
+            throw new RuntimeException(e);
         } finally {
             mCameraOpenCloseLock.release();
         }
@@ -278,8 +253,7 @@ public class RenderActivity extends AppCompatActivity implements SurfaceHolder.C
         int w = aspectRatio.getWidth();
         int h = aspectRatio.getHeight();
         for (Size option : choices) {
-            if (option.getHeight() == option.getWidth() * h / w &&
-                    option.getWidth() >= width && option.getHeight() >= height) {
+            if (option.getHeight() == option.getWidth() * h / w && option.getWidth() >= width && option.getHeight() >= height) {
                 bigEnough.add(option);
             }
         }
@@ -349,7 +323,7 @@ public class RenderActivity extends AppCompatActivity implements SurfaceHolder.C
                     } catch (CameraAccessException e) {
                         throw new RuntimeException(e);
                     }
-                    if (GLESTool.isTablet(RenderActivity.this) && orientationLiveData.getValue() != null) {
+                    if (GLESTool.isTablet(Render2Activity.this) && orientationLiveData.getValue() != null) {
                         mRenderManager.setRotation(orientationLiveData.getValue());
                     }
                 }
@@ -373,14 +347,12 @@ public class RenderActivity extends AppCompatActivity implements SurfaceHolder.C
         }
 
         @Override
-        public void onCaptureProgressed(CameraCaptureSession session, CaptureRequest request,
-                                        CaptureResult partialResult) {
+        public void onCaptureProgressed(CameraCaptureSession session, CaptureRequest request, CaptureResult partialResult) {
             process(partialResult);
         }
 
         @Override
-        public void onCaptureCompleted(CameraCaptureSession session, CaptureRequest request,
-                                       TotalCaptureResult result) {
+        public void onCaptureCompleted(CameraCaptureSession session, CaptureRequest request, TotalCaptureResult result) {
             process(result);
         }
     };
@@ -390,8 +362,7 @@ public class RenderActivity extends AppCompatActivity implements SurfaceHolder.C
         @Override
         public int compare(Size lhs, Size rhs) {
             // We cast here to ensure the multiplications won't overflow
-            return Long.signum((long) lhs.getWidth() * lhs.getHeight() -
-                    (long) rhs.getWidth() * rhs.getHeight());
+            return Long.signum((long) lhs.getWidth() * lhs.getHeight() - (long) rhs.getWidth() * rhs.getHeight());
         }
     }
 
@@ -401,32 +372,45 @@ public class RenderActivity extends AppCompatActivity implements SurfaceHolder.C
     }
 
     @Override
-    public void surfaceCreated(@NonNull SurfaceHolder holder) {
-        Log.d(TAG, "surfaceCreated: ");
-        mPreviewSurface = holder.getSurface();
+    public void onSurfaceTextureAvailable(@NonNull SurfaceTexture surface, int width, int height) {
+        mPreviewSurface = new Surface(surface);
+        mPreviewSurfaceWidth = width;
+        mPreviewSurfaceHeight = height;
         setUpOutputSurfaces();
         openCamera();
-
     }
 
     @Override
-    public void surfaceChanged(@NonNull SurfaceHolder holder, int format, int width, int height) {
-        Log.d(TAG, "surfaceChanged: size = " + width + "x" + height + ", fmt = " + format);
+    public void onSurfaceTextureSizeChanged(@NonNull SurfaceTexture surface, int width, int height) {
+        if (mPreviewSurface == null) {
+            mPreviewSurface = new Surface(surface);
+        }
         mPreviewSurfaceWidth = width;
         mPreviewSurfaceHeight = height;
+        int screenHeight = Resources.getSystem().getDisplayMetrics().heightPixels;
+        int screenWidth = Resources.getSystem().getDisplayMetrics().widthPixels;
+        Log.d(TAG, "surfaceChanged: screenWidth = " + screenWidth + ",screenHeight = " + screenHeight);
         mRenderManager.setResolution(mPreviewSurfaceWidth, mPreviewSurfaceHeight);
 
 
     }
 
     @Override
-    public void surfaceDestroyed(@NonNull SurfaceHolder holder) {
+    public boolean onSurfaceTextureDestroyed(@NonNull SurfaceTexture surface) {
         mPreviewSurface = null;
+        return false;
+    }
+
+    @Override
+    public void onSurfaceTextureUpdated(@NonNull SurfaceTexture surface) {
+        if (mPreviewSurface == null) {
+            mPreviewSurface = new Surface(surface);
+        }
+
     }
 
     private static int getSystemUiVisibility() {
-        int flags = View.SYSTEM_UI_FLAG_HIDE_NAVIGATION | View.SYSTEM_UI_FLAG_FULLSCREEN |
-                View.SYSTEM_UI_FLAG_LAYOUT_STABLE | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN;
+        int flags = View.SYSTEM_UI_FLAG_HIDE_NAVIGATION | View.SYSTEM_UI_FLAG_FULLSCREEN | View.SYSTEM_UI_FLAG_LAYOUT_STABLE | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN;
         flags |= View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY;
         return flags;
     }
@@ -434,15 +418,11 @@ public class RenderActivity extends AppCompatActivity implements SurfaceHolder.C
     public void setStatusBarOrScreenStatus(Activity activity) {
         Window window = activity.getWindow();
         //全屏+锁屏+常亮显示
-        window.addFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN |
-                WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON |
-                WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED |
-                WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON);
+        window.addFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN | WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON | WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED | WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON);
         window.getDecorView().setSystemUiVisibility(getSystemUiVisibility());
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
             WindowManager.LayoutParams layoutParams = getWindow().getAttributes();
-            layoutParams.layoutInDisplayCutoutMode =
-                    WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES;
+            layoutParams.layoutInDisplayCutoutMode = WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES;
             window.setAttributes(layoutParams);
         }
         // 5.0以上系统状态栏透明
@@ -452,5 +432,4 @@ public class RenderActivity extends AppCompatActivity implements SurfaceHolder.C
         window.addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);
         window.setStatusBarColor(Color.TRANSPARENT);//设置透明
     }
-
 }

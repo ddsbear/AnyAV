@@ -16,6 +16,7 @@ import android.widget.Toast;
 import com.dds.base.permission.Permissions;
 import com.dds.gles.demo2.camera.preview.PreviewCameraActivity;
 import com.dds.gles.demo2.camera.takepic.TakePictureActivity;
+import com.dds.gles.demo3.Render2Activity;
 import com.dds.gles.demo3.RenderActivity;
 import com.dds.gles.matrix.MatrixActivity;
 import com.dds.gles.demo1.ui.GLCameraActivity;
@@ -33,7 +34,8 @@ public class OpenGLActivity extends AppCompatActivity implements View.OnClickLis
         add("绘制图形", GLGraphicalActivity.class);
         add("绘制图片", GLImageActivity.class);
         add("绘制OES+Camera2", GLCameraActivity.class);
-        add("离屏OES+Camera2", RenderActivity.class);
+        add("离屏OES+Camera2+SurfaceView", RenderActivity.class);
+        add("离屏OES+Camera2+TextureView", Render2Activity.class);
     }
 
     @Override
