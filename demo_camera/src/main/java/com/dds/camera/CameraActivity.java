@@ -28,8 +28,8 @@ public class CameraActivity extends AppCompatActivity implements View.OnClickLis
     public static final String BUNDLE_KEY = "bundle";
 
     static {
-        add("Camera2+SurfaceView", Camera2SurfaceViewActivity.class);
         add("Camera1+SurfaceView", Camera1SurfaceViewActivity.class);
+        add("Camera2+SurfaceView", Camera2SurfaceViewActivity.class);
     }
 
     @Override

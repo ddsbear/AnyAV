@@ -2,19 +2,24 @@ package com.dds.camera.camera1;
 
 import android.app.Activity;
 import android.content.Context;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.ImageFormat;
 import android.graphics.Matrix;
 import android.hardware.Camera;
 import android.os.Environment;
 import android.util.DisplayMetrics;
 import android.util.Log;
+import android.util.Size;
+import android.view.Gravity;
 import android.view.Surface;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
+import android.view.ViewGroup;
+import android.widget.FrameLayout;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
-import androidx.appcompat.app.AppCompatActivity;
 
 import java.io.BufferedOutputStream;
 import java.io.File;
@@ -29,11 +34,11 @@ public class CameraPresenter implements SurfaceHolder.Callback, Camera.PreviewCa
     private static final String TAG = "CameraPresenter";
     private Camera mCamera;
     private SurfaceView mSurfaceView;
-
     private SurfaceHolder mSurfaceHolder;
     private Activity mContext;
 
-    private int screenWidth, screenHeight;
+    private final int screenWidth;
+    private final int screenHeight;
 
     private int mCameraId = Camera.CameraInfo.CAMERA_FACING_BACK;
     private Camera.Parameters mParameters;
@@ -41,7 +46,8 @@ public class CameraPresenter implements SurfaceHolder.Callback, Camera.PreviewCa
 
     private int orientation;
 
-    public CameraPresenter(Activity context, SurfaceView surfaceView) {
+
+    public CameraPresenter(Activity context, SurfaceView surfaceView, Size mDesiredPreviewSize) {
         mContext = context;
         this.mSurfaceView = surfaceView;
         mSurfaceHolder = mSurfaceView.getHolder();
@@ -51,6 +57,11 @@ public class CameraPresenter implements SurfaceHolder.Callback, Camera.PreviewCa
         screenWidth = dm.widthPixels;
         screenHeight = dm.heightPixels;
         mSurfaceHolder.addCallback(this);
+
+        Size bestLayoutSize = findBestLayoutSize(context, mDesiredPreviewSize);
+        FrameLayout.LayoutParams layoutParams = new FrameLayout.LayoutParams(bestLayoutSize.getWidth(), bestLayoutSize.getHeight());
+        layoutParams.gravity = Gravity.CENTER;
+        surfaceView.setLayoutParams(layoutParams);
     }
 
     public void setCameraCallBack(CameraCallBack mCameraCallBack) {
@@ -60,28 +71,40 @@ public class CameraPresenter implements SurfaceHolder.Callback, Camera.PreviewCa
 
     public void takePicture(final int takePhotoOrientation) {
         if (mCamera != null) {
-            mCamera.takePicture(null, null, new Camera.PictureCallback() {
-                @Override
-                public void onPictureTaken(byte[] data, Camera camera) {
-                    mCamera.startPreview();
-                    if (mCameraCallBack != null) {
-                        mCameraCallBack.onTakePicture(data, camera);
-                    }
-                    ThreadPoolUtil.execute(() -> {
-                        String title = genSaveTitle();
-                        String path = genDCIMCameraPath(title, JPEG_SUFFIX);
-                        save(data, path);
-                        mContext.runOnUiThread(() -> {
-                            Toast.makeText(mContext, "save success " + title, Toast.LENGTH_SHORT).show();
-                        });
-                    });
-
-
+            mCamera.takePicture(null, null, (data, camera) -> {
+                // reset preview
+                mCamera.startPreview();
+                // callback data
+                if (mCameraCallBack != null) {
+                    mCameraCallBack.onTakePicture(data, camera);
                 }
+                // save jpg
+                ThreadPoolUtil.execute(() -> {
+                    String title = genSaveTitle();
+                    String path = genDCIMCameraPath(title, JPEG_SUFFIX);
+                    save(data, path);
+                    rotateImageView(mCameraId, takePhotoOrientation, path);
+                    mContext.runOnUiThread(() -> {
+                        Toast.makeText(mContext, "save success " + title, Toast.LENGTH_SHORT).show();
+                    });
+                });
+
+
             });
         }
     }
 
+    public void releaseCamera() {
+        if (mCamera != null) {
+            //停止预览
+            mCamera.stopPreview();
+            mCamera.setPreviewCallback(null);
+            mCamera.release();
+            mCamera = null;
+        }
+    }
+
+    //--------------------------------------------------------------------------
     @Override
     public void surfaceCreated(@NonNull SurfaceHolder holder) {
         if (mCamera == null) {
@@ -100,6 +123,7 @@ public class CameraPresenter implements SurfaceHolder.Callback, Camera.PreviewCa
         releaseCamera();
     }
 
+    //--------------------------------------------------------------------------
     private void openCamera(int mCameraId) {
         boolean isSupportCamera = isSupport(mCameraId);
         if (isSupportCamera) {
@@ -125,20 +149,8 @@ public class CameraPresenter implements SurfaceHolder.Callback, Camera.PreviewCa
         }
     }
 
-    public void releaseCamera() {
-        if (mCamera != null) {
-            //停止预览
-            mCamera.stopPreview();
-            mCamera.setPreviewCallback(null);
-            mCamera.release();
-            mCamera = null;
-        }
-
-    }
-
     private void setCameraDisplayOrientation(Activity appCompatActivity, int cameraId, Camera camera) {
-        Camera.CameraInfo info =
-                new Camera.CameraInfo();
+        Camera.CameraInfo info = new Camera.CameraInfo();
         Camera.getCameraInfo(cameraId, info);
         //rotation是预览Window的旋转方向，对于手机而言，当在清单文件设置Activity的screenOrientation="portait"时，
         //rotation=0，这时候没有旋转，当screenOrientation="landScape"时，rotation=1。
@@ -147,7 +159,6 @@ public class CameraPresenter implements SurfaceHolder.Callback, Camera.PreviewCa
         int degrees = 0;
         switch (rotation) {
             case Surface.ROTATION_0:
-                degrees = 0;
                 break;
             case Surface.ROTATION_90:
                 degrees = 90;
@@ -170,7 +181,7 @@ public class CameraPresenter implements SurfaceHolder.Callback, Camera.PreviewCa
         }
         orientation = result;
         //调整预览图像旋转角度
-        camera.setDisplayOrientation(result);
+        camera.setDisplayOrientation(orientation);
 
     }
 
@@ -213,15 +224,21 @@ public class CameraPresenter implements SurfaceHolder.Callback, Camera.PreviewCa
         if (localSizes != null) {
             int cameraSizeLength = localSizes.size();
             // 如果是 预览窗口宽：高 ==  3：4的话
-            if (Float.valueOf(width) / height == 3.0f / 4) {
+            if ((float) width / height == 3.0f / 4) {
                 for (int n = 0; n < cameraSizeLength; n++) {
                     Camera.Size size = localSizes.get(n);
-                    if (Float.valueOf(size.width) / size.height == 4.0f / 3) {
+                    if ((float) size.width / size.height == 4.0f / 3) {
                         mParameters.setPreviewSize(size.width, size.height);
                         break;
                     }
-
-
+                }
+            } else if ((float) width / height == 9.0f / 16) {
+                for (int n = 0; n < cameraSizeLength; n++) {
+                    Camera.Size size = localSizes.get(n);
+                    if ((float) size.width / size.height == 16.0f / 9) {
+                        mParameters.setPreviewSize(size.width, size.height);
+                        break;
+                    }
                 }
             } else {
                 //全屏幕预览
@@ -328,7 +345,6 @@ public class CameraPresenter implements SurfaceHolder.Callback, Camera.PreviewCa
 
 
     private void fixScreenSize(int fitSizeHeight, int fitSizeWidth) {
-
         // 预览 View 的大小，比如 SurfaceView
         int viewHeight = screenHeight;
         int viewWidth = screenWidth;
@@ -378,6 +394,65 @@ public class CameraPresenter implements SurfaceHolder.Callback, Camera.PreviewCa
     }
 
 
+    private void rotateImageView(int cameraId, int orientation, String path) {
+        Bitmap bitmap = BitmapFactory.decodeFile(path);
+        Matrix matrix = new Matrix();
+        matrix.postRotate((float) orientation);
+        // 创建新的图片
+        Bitmap resizedBitmap;
+
+        if (cameraId == 1) {
+            if (orientation == 90) {
+                matrix.postRotate(180f);
+            }
+        }
+        // 创建新的图片
+        resizedBitmap = Bitmap.createBitmap(bitmap, 0, 0,
+                bitmap.getWidth(), bitmap.getHeight(), matrix, true);
+
+        //新增 如果是前置 需要镜面翻转处理
+        if (cameraId == 1) {
+            Matrix matrix1 = new Matrix();
+            matrix1.postScale(-1f, 1f);
+            resizedBitmap = Bitmap.createBitmap(resizedBitmap, 0, 0,
+                    resizedBitmap.getWidth(), resizedBitmap.getHeight(), matrix1, true);
+
+        }
+
+
+        File file = new File(path);
+        //重新写入文件
+        try {
+            // 写入文件
+            FileOutputStream fos;
+            fos = new FileOutputStream(file);
+            //默认jpg
+            resizedBitmap.compress(Bitmap.CompressFormat.JPEG, 100, fos);
+            fos.flush();
+            fos.close();
+            resizedBitmap.recycle();
+        } catch (Exception e) {
+            e.printStackTrace();
+            return;
+        }
+
+    }
+
+    public static Size findBestLayoutSize(Context context, Size targetSize) {
+        DisplayMetrics metrics = context.getResources().getDisplayMetrics();
+        int displayWidth = metrics.widthPixels;
+        int displayHeight = metrics.heightPixels;
+
+        float ratio = (float) targetSize.getWidth() / targetSize.getHeight();
+        if (displayHeight > displayWidth) {
+            displayHeight = (int) (displayWidth * ratio);
+        } else {
+            displayWidth = (int) (displayHeight * ratio);
+        }
+        return new Size(displayWidth, displayHeight);
+    }
+
+
     public static final String PRIMARY_STORAGE_PATH = Environment.getExternalStorageDirectory().toString();
     public static final String CAMERA_STORAGE_PATH_SUFFIX = "DCIM/Camera/";
     public static final String JPEG_SUFFIX = ".jpeg";
@@ -396,7 +471,7 @@ public class CameraPresenter implements SurfaceHolder.Callback, Camera.PreviewCa
                 .append(titleTrunk);
         if (titleTrunk.equals(mLastTitle)) {
             mDumpNum++;
-            builder.append("_" + mDumpNum);
+            builder.append("_").append(mDumpNum);
         } else {
             mLastTitle = titleTrunk;
             mDumpNum = 0;
@@ -405,14 +480,11 @@ public class CameraPresenter implements SurfaceHolder.Callback, Camera.PreviewCa
     }
 
     public static String genDCIMCameraPath(String title, String suffix) {
-        StringBuilder builder = new StringBuilder();
-        builder.append(PRIMARY_STORAGE_PATH)
-                .append(File.separator)
-                .append(CAMERA_STORAGE_PATH_SUFFIX)
-                .append(title)
-                .append(suffix);
-
-        return builder.toString();
+        return PRIMARY_STORAGE_PATH +
+                File.separator +
+                CAMERA_STORAGE_PATH_SUFFIX +
+                title +
+                suffix;
     }
 
     @Override

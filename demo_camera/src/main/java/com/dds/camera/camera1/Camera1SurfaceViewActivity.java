@@ -2,41 +2,32 @@ package com.dds.camera.camera1;
 
 import android.app.Activity;
 import android.graphics.Color;
-import android.hardware.camera2.CameraAccessException;
-import android.hardware.camera2.CameraCaptureSession;
-import android.hardware.camera2.CameraDevice;
-import android.hardware.camera2.CaptureRequest;
-import android.hardware.camera2.TotalCaptureResult;
-import android.media.Image;
 import android.os.Build;
 import android.os.Bundle;
-import android.os.Environment;
-import android.util.Log;
+import android.util.Size;
+import android.view.SurfaceView;
 import android.view.View;
 import android.view.Window;
 import android.view.WindowManager;
 import android.widget.Button;
-import android.widget.Toast;
 
-import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 
-import com.dds.camera.camera2.Camera2SurfaceViewActivity;
-import com.dds.camera.camera2.view.AutoFitSurfaceView;
-import com.dds.camera.camera2.utils.OrientationLiveData;
-import com.dds.fbo.R;
 
-import java.io.File;
-import java.util.Arrays;
-import java.util.List;
+import com.dds.camera.view.AutoFitSurfaceView;
+import com.dds.fbo.R;
 
 public class Camera1SurfaceViewActivity extends AppCompatActivity {
 
-    private AutoFitSurfaceView mSurfaceView;
+    private SurfaceView mSurfaceView;
     private CameraPresenter cameraPresenter;
 
     private Button btnSwitch;
     private Button btnPicture;
+
+    private OrientationLiveData orientationLiveData;
+
+    private final Size mDesiredPreviewSize = new Size(1920, 1080);
 
 
     @Override
@@ -45,10 +36,13 @@ public class Camera1SurfaceViewActivity extends AppCompatActivity {
         setStatusBarOrScreenStatus(this);
         setContentView(R.layout.activity_camera1_surface_view);
         mSurfaceView = findViewById(R.id.preview_surface);
-        cameraPresenter = new CameraPresenter(this, mSurfaceView);
+        cameraPresenter = new CameraPresenter(this, mSurfaceView, mDesiredPreviewSize);
         btnSwitch = findViewById(R.id.btn_switch);
         btnPicture = findViewById(R.id.btn_take_picture);
         initListener();
+        orientationLiveData = new OrientationLiveData(this);
+
+
     }
 
     private void initListener() {
@@ -57,7 +51,7 @@ public class Camera1SurfaceViewActivity extends AppCompatActivity {
     }
 
     private void takePicture() {
-        cameraPresenter.takePicture(90);
+        cameraPresenter.takePicture(orientationLiveData.getValue() == null ? 90 : orientationLiveData.getValue());
     }
 
     private void switchCamera() {

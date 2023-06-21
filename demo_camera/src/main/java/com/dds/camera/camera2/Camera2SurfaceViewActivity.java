@@ -26,15 +26,18 @@ import android.os.Environment;
 import android.os.Handler;
 import android.os.HandlerThread;
 import android.os.Looper;
+import android.util.DisplayMetrics;
 import android.util.Log;
 import android.util.Size;
 import android.util.SparseIntArray;
+import android.view.Gravity;
 import android.view.Surface;
 import android.view.SurfaceHolder;
 import android.view.View;
 import android.view.Window;
 import android.view.WindowManager;
 import android.widget.Button;
+import android.widget.FrameLayout;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
@@ -42,7 +45,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 
 import com.dds.camera.camera2.utils.OrientationLiveData;
-import com.dds.camera.camera2.view.AutoFitSurfaceView;
+import com.dds.camera.view.AutoFitSurfaceView;
 import com.dds.fbo.R;
 
 import java.io.File;
@@ -217,7 +220,14 @@ public class Camera2SurfaceViewActivity extends AppCompatActivity implements Sur
         mPreviewSize = chooseOptimalSize(map.getOutputSizes(SurfaceTexture.class), mDesiredPreviewSize.getWidth(), mDesiredPreviewSize.getHeight(), mDesiredPreviewSize);
         mCameraId = cameraId;
         orientationLiveData = new OrientationLiveData(this, characteristics);
+
+        // set layoutSize
+        Size bestLayoutSize = findBestLayoutSize(this, mDesiredPreviewSize);
+        FrameLayout.LayoutParams layoutParams = new FrameLayout.LayoutParams(bestLayoutSize.getWidth(), bestLayoutSize.getHeight());
+        layoutParams.gravity = Gravity.CENTER;
+        mSurfaceView.setLayoutParams(layoutParams);
         mSurfaceView.setAspectRatio(mPreviewSize.getWidth(), mPreviewSize.getHeight());
+
 
         orientationLiveData.observe(this, integer -> {
             Log.d(TAG, "orientationLiveData orientation = " + integer);
@@ -453,6 +463,21 @@ public class Camera2SurfaceViewActivity extends AppCompatActivity implements Sur
             }
         }
     }
+
+    public static Size findBestLayoutSize(Context context, Size targetSize) {
+        DisplayMetrics metrics = context.getResources().getDisplayMetrics();
+        int displayWidth = metrics.widthPixels;
+        int displayHeight = metrics.heightPixels;
+
+        float ratio = (float) targetSize.getWidth() / targetSize.getHeight();
+        if (displayHeight > displayWidth) {
+            displayHeight = (int) (displayWidth * ratio);
+        } else {
+            displayWidth = (int) (displayHeight * ratio);
+        }
+        return new Size(displayWidth, displayHeight);
+    }
+
 
     @Override
     public void surfaceCreated(@NonNull SurfaceHolder holder) {
