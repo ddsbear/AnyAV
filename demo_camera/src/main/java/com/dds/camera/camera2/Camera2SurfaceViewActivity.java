@@ -1,4 +1,4 @@
-package com.dds.camera.ui;
+package com.dds.camera.camera2;
 
 import android.Manifest;
 import android.app.Activity;
@@ -41,8 +41,8 @@ import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 
-import com.dds.camera.utils.OrientationLiveData;
-import com.dds.camera.view.AutoFitSurfaceView;
+import com.dds.camera.camera2.utils.OrientationLiveData;
+import com.dds.camera.camera2.view.AutoFitSurfaceView;
 import com.dds.fbo.R;
 
 import java.io.File;
@@ -60,7 +60,7 @@ import java.util.concurrent.TimeUnit;
 /**
  * SurfaceView + Camera2
  */
-public class SurfaceViewCamera2Activity extends AppCompatActivity implements SurfaceHolder.Callback {
+public class Camera2SurfaceViewActivity extends AppCompatActivity implements SurfaceHolder.Callback {
     private static final String TAG = "SurfaceViewCamera2Activity";
     private AutoFitSurfaceView mSurfaceView;
     private Button btnSwitch;
@@ -185,7 +185,7 @@ public class SurfaceViewCamera2Activity extends AppCompatActivity implements Sur
                 @Override
                 public void onCaptureCompleted(@NonNull CameraCaptureSession session, @NonNull CaptureRequest request, @NonNull TotalCaptureResult result) {
                     Log.d(TAG, "onCaptureCompleted: ");
-                    Toast.makeText(SurfaceViewCamera2Activity.this, "save success", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(Camera2SurfaceViewActivity.this, "save success", Toast.LENGTH_SHORT).show();
                 }
             }, mBackgroundHandler);
 
@@ -259,7 +259,7 @@ public class SurfaceViewCamera2Activity extends AppCompatActivity implements Sur
             if (!mCameraOpenCloseLock.tryAcquire(2500, TimeUnit.MILLISECONDS)) {
                 throw new RuntimeException("Time out waiting to lock camera opening.");
             }
-            if (ActivityCompat.checkSelfPermission(SurfaceViewCamera2Activity.this, Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
+            if (ActivityCompat.checkSelfPermission(Camera2SurfaceViewActivity.this, Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
                 return;
             }
             manager.openCamera(mCameraId, mStateCallback, mBackgroundHandler);

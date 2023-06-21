@@ -55,10 +55,10 @@ public class BaseTextureRender {
             });
 
 
-    protected static final String VERTEX_SHADER_OES = "#version 300 es\n" +
-            "in vec4 aPosition;\n" +
-            "in vec4 aTextureCoord;\n" +
-            "out vec2 vTextureCoord;\n" +
+    protected static final String VERTEX_SHADER_OES =
+            "attribute vec4 aPosition;\n" +
+            "attribute vec4 aTextureCoord;\n" +
+            "varying vec2 vTextureCoord;\n" +
             "uniform mat4 uMVPMatrix;\n" +
             "uniform mat4 uSTMatrix;\n" +
             "void main() {\n" +
@@ -66,14 +66,13 @@ public class BaseTextureRender {
             "  vTextureCoord = (uSTMatrix * aTextureCoord).xy;\n" +
             "}\n";
 
-    protected static final String FRAGMENT_SHADER_OES = "#version 300 es\n" +
-            "#extension GL_OES_EGL_image_external_essl3 : require\n" +
+    protected static final String FRAGMENT_SHADER_OES =
+            "#extension GL_OES_EGL_image_external : require\n" +
             "precision mediump float;\n" +
             "uniform samplerExternalOES sTexture;\n" +
-            "in vec2 vTextureCoord;\n" +
-            "out vec4 fragColor;\n" +
+            "varying vec2 vTextureCoord;\n" +
             "void main() {\n" +
-            "  fragColor = texture(sTexture, vTextureCoord);\n" +
+            "  gl_FragColor = texture2D(sTexture, vTextureCoord);\n" +
             "}\n";
 
 

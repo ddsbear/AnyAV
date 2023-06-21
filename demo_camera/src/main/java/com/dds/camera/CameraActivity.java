@@ -15,7 +15,8 @@ import android.widget.RelativeLayout;
 import android.widget.Toast;
 
 import com.dds.base.permission.Permissions;
-import com.dds.camera.ui.SurfaceViewCamera2Activity;
+import com.dds.camera.camera1.Camera1SurfaceViewActivity;
+import com.dds.camera.camera2.Camera2SurfaceViewActivity;
 import com.dds.fbo.R;
 
 import java.util.ArrayList;
@@ -27,7 +28,8 @@ public class CameraActivity extends AppCompatActivity implements View.OnClickLis
     public static final String BUNDLE_KEY = "bundle";
 
     static {
-        add("Camera2+SurfaceView", SurfaceViewCamera2Activity.class);
+        add("Camera2+SurfaceView", Camera2SurfaceViewActivity.class);
+        add("Camera1+SurfaceView", Camera1SurfaceViewActivity.class);
     }
 
     @Override

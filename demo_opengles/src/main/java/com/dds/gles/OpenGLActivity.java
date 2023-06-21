@@ -1,10 +1,5 @@
 package com.dds.gles;
 
-import androidx.annotation.NonNull;
-import androidx.appcompat.app.AppCompatActivity;
-import androidx.recyclerview.widget.LinearLayoutManager;
-import androidx.recyclerview.widget.RecyclerView;
-
 import android.Manifest;
 import android.content.Intent;
 import android.os.Bundle;
@@ -13,15 +8,15 @@ import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.Toast;
 
+import androidx.annotation.NonNull;
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
+
 import com.dds.base.permission.Permissions;
 import com.dds.gles.demo2.camera.preview.PreviewCameraActivity;
 import com.dds.gles.demo2.camera.takepic.TakePictureActivity;
-import com.dds.gles.demo3.Render2Activity;
 import com.dds.gles.demo3.RenderActivity;
-import com.dds.gles.matrix.MatrixActivity;
-import com.dds.gles.demo1.ui.GLCameraActivity;
-import com.dds.gles.demo1.ui.GLGraphicalActivity;
-import com.dds.gles.demo1.ui.GLImageActivity;
 
 import java.util.ArrayList;
 
@@ -31,11 +26,15 @@ public class OpenGLActivity extends AppCompatActivity implements View.OnClickLis
     private static final ArrayList<MenuBean> mData = new ArrayList<>();
 
     static {
-        add("绘制图形", GLGraphicalActivity.class);
-        add("绘制图片", GLImageActivity.class);
-        add("绘制OES+Camera2", GLCameraActivity.class);
+//        add("绘制图形", GLGraphicalActivity.class);
+//        add("绘制图片", GLImageActivity.class);
+
+        add("预览+camera1", PreviewCameraActivity.class);
+        add("拍照+camera1", TakePictureActivity.class);
+
+//        add("绘制OES+Camera2", GLCameraActivity.class);
         add("离屏OES+Camera2+SurfaceView", RenderActivity.class);
-        add("离屏OES+Camera2+TextureView", Render2Activity.class);
+//        add("离屏OES+Camera2+TextureView", Render2Activity.class);
     }
 
     @Override
