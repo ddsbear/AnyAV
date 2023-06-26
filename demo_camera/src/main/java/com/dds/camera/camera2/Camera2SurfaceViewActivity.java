@@ -44,7 +44,6 @@ import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 
-import com.dds.camera.camera2.utils.OrientationLiveData;
 import com.dds.camera.view.AutoFitSurfaceView;
 import com.dds.fbo.R;
 
@@ -177,12 +176,16 @@ public class Camera2SurfaceViewActivity extends AppCompatActivity implements Sur
         try {
             CaptureRequest.Builder captureBuilder = mCameraDevice.createCaptureRequest(CameraDevice.TEMPLATE_STILL_CAPTURE);
             captureBuilder.addTarget(mImageReader.getSurface());
+
+            // AF
             captureBuilder.set(CaptureRequest.CONTROL_AF_MODE,
                     CaptureRequest.CONTROL_AF_MODE_CONTINUOUS_PICTURE);
+            // AE
             captureBuilder.set(CaptureRequest.CONTROL_AE_MODE,
                     CaptureRequest.CONTROL_AE_MODE_ON_AUTO_FLASH);
+
             Integer rotation = orientationLiveData.getValue();
-            captureBuilder.set(CaptureRequest.JPEG_ORIENTATION, ORIENTATIONS.get(rotation == null ? 0 : rotation));
+            captureBuilder.set(CaptureRequest.JPEG_ORIENTATION, rotation);
 
             mCaptureSession.capture(captureBuilder.build(), new CameraCaptureSession.CaptureCallback() {
                 @Override

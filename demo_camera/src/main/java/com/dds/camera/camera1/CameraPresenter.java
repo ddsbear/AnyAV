@@ -94,6 +94,14 @@ public class CameraPresenter implements SurfaceHolder.Callback, Camera.PreviewCa
         }
     }
 
+    public void switchCamera() {
+        releaseCamera();
+        //在Android P之前 Android设备仍然最多只有前后两个摄像头，在Android p后支持多个摄像头 用户想打开哪个就打开哪个
+        mCameraId = (mCameraId + 1) % Camera.getNumberOfCameras();
+        openCamera(mCameraId);
+        startPreview();
+    }
+
     public void releaseCamera() {
         if (mCamera != null) {
             //停止预览
@@ -495,7 +503,7 @@ public class CameraPresenter implements SurfaceHolder.Callback, Camera.PreviewCa
     }
 
     public interface CameraCallBack {
-        //预览帧回调
+
         void onPreviewFrame(byte[] data, Camera camera);
 
         void onTakePicture(byte[] data, Camera Camera);

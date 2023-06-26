@@ -51,7 +51,6 @@ public class CameraActivity extends AppCompatActivity implements View.OnClickLis
         });
     }
 
-    // 初始化按钮列表
     private void initData() {
         recyclerView.setAdapter(new MenuAdapter());
     }

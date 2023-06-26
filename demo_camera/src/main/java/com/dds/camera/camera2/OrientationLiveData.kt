@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.dds.camera.camera2.utils
+package com.dds.camera.camera2
 
 import android.content.Context
 import android.hardware.camera2.CameraCharacteristics

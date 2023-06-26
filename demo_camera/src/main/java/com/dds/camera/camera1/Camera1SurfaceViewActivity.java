@@ -55,7 +55,7 @@ public class Camera1SurfaceViewActivity extends AppCompatActivity {
     }
 
     private void switchCamera() {
-
+        cameraPresenter.switchCamera();
     }
 
     @Override
