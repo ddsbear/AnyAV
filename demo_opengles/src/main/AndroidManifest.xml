@@ -19,16 +19,6 @@
         android:required="true" />
 
     <application>
-        <activity
-            android:name=".demo3.Render2Activity"
-            android:configChanges="orientation|screenSize|screenLayout|keyboardHidden|mcc|mnc|navigation|keyboard"
-            android:exported="false"
-            android:windowSoftInputMode="stateAlwaysHidden|adjustPan" />
-        <activity
-            android:name=".demo3.RenderActivity"
-            android:configChanges="orientation|screenSize|screenLayout|keyboardHidden|mcc|mnc|navigation|keyboard"
-            android:exported="false"
-            android:windowSoftInputMode="stateAlwaysHidden|adjustPan" />
 
         <activity
             android:name=".OpenGLActivity"
@@ -49,6 +39,8 @@
         </activity>
         <activity android:name=".demo1.ui.GLGraphicalActivity" />
         <activity android:name=".demo1.ui.GLImageActivity" />
+        <activity android:name="com.dds.gles.demo3.RenderSurfaceViewActivity" />
+        <activity android:name="com.dds.gles.demo3.RenderTextureViewActivity" />
     </application>
 
 </manifest>

@@ -16,6 +16,7 @@ import android.widget.Toast;
 
 import com.dds.base.permission.Permissions;
 import com.dds.camera.camera1.Camera1SurfaceViewActivity;
+import com.dds.camera.camera1.Camera1TextureViewActivity;
 import com.dds.camera.camera2.Camera2SurfaceViewActivity;
 import com.dds.fbo.R;
 
@@ -29,6 +30,7 @@ public class CameraActivity extends AppCompatActivity implements View.OnClickLis
 
     static {
         add("Camera1+SurfaceView", Camera1SurfaceViewActivity.class);
+        add("Camera1+TextureView", Camera1TextureViewActivity.class);
         add("Camera2+SurfaceView", Camera2SurfaceViewActivity.class);
     }
 
@@ -42,6 +44,7 @@ public class CameraActivity extends AppCompatActivity implements View.OnClickLis
 
         Permissions.request(this, new String[]{
                 Manifest.permission.CAMERA,
+                Manifest.permission.READ_EXTERNAL_STORAGE,
                 Manifest.permission.WRITE_EXTERNAL_STORAGE
         }, integer -> {
             if (integer != 0) {

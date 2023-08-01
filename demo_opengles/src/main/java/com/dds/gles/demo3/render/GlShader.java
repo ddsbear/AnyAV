@@ -1,10 +1,7 @@
 package com.dds.gles.demo3.render;
 
 import android.opengl.GLES20;
-import android.opengl.GLUtils;
 import android.util.Log;
-
-import java.nio.FloatBuffer;
 
 public class GlShader {
     private static final String TAG = "GlShader";

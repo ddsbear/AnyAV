@@ -1,10 +1,7 @@
 package com.dds.camera.camera1;
 
 import android.content.Context;
-import android.hardware.camera2.CameraCharacteristics;
-import android.util.Log;
 import android.view.OrientationEventListener;
-import android.view.Surface;
 
 import androidx.lifecycle.LiveData;
 

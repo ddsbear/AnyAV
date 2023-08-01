@@ -16,7 +16,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.dds.base.permission.Permissions;
 import com.dds.gles.demo2.camera.preview.PreviewCameraActivity;
 import com.dds.gles.demo2.camera.takepic.TakePictureActivity;
-import com.dds.gles.demo3.RenderActivity;
+import com.dds.gles.demo3.RenderSurfaceViewActivity;
 
 import java.util.ArrayList;
 
@@ -33,7 +33,7 @@ public class OpenGLActivity extends AppCompatActivity implements View.OnClickLis
         add("拍照+camera1", TakePictureActivity.class);
 
 //        add("绘制OES+Camera2", GLCameraActivity.class);
-        add("离屏OES+Camera2+SurfaceView", RenderActivity.class);
+        add("离屏OES+Camera2+SurfaceView", RenderSurfaceViewActivity.class);
 //        add("离屏OES+Camera2+TextureView", Render2Activity.class);
     }
 

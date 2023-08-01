@@ -8,7 +8,6 @@ import android.opengl.GLES20;
 import android.opengl.GLES30;
 import android.opengl.GLException;
 import android.util.DisplayMetrics;
-import android.util.Log;
 import android.view.Display;
 import android.view.WindowManager;
 
@@ -114,7 +113,7 @@ public class GLESTool {
         return "";
     }
 
-    public static String convertStreamToString(java.io.InputStream is) {
+    public static String convertStreamToString(InputStream is) {
         java.util.Scanner s = new java.util.Scanner(is).useDelimiter("\\A");
         return s.hasNext() ? s.next() : "";
     }

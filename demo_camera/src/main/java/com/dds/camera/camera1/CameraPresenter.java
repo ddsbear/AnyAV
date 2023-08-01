@@ -6,8 +6,11 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.ImageFormat;
 import android.graphics.Matrix;
+import android.graphics.SurfaceTexture;
 import android.hardware.Camera;
 import android.os.Environment;
+import android.os.Handler;
+import android.os.Looper;
 import android.util.DisplayMetrics;
 import android.util.Log;
 import android.util.Size;
@@ -15,7 +18,7 @@ import android.view.Gravity;
 import android.view.Surface;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
-import android.view.ViewGroup;
+import android.view.TextureView;
 import android.widget.FrameLayout;
 import android.widget.Toast;
 
@@ -24,17 +27,21 @@ import androidx.annotation.NonNull;
 import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
-import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
 
-public class CameraPresenter implements SurfaceHolder.Callback, Camera.PreviewCallback {
+public class CameraPresenter implements SurfaceHolder.Callback, Camera.PreviewCallback, TextureView.SurfaceTextureListener {
 
     private static final String TAG = "CameraPresenter";
     private Camera mCamera;
     private SurfaceView mSurfaceView;
     private SurfaceHolder mSurfaceHolder;
+
+    private TextureView mTextureView;
+
+    private SurfaceTexture mSurfaceTexture;
+
     private Activity mContext;
 
     private final int screenWidth;
@@ -45,7 +52,6 @@ public class CameraPresenter implements SurfaceHolder.Callback, Camera.PreviewCa
     private CameraCallBack mCameraCallBack;
 
     private int orientation;
-
 
     public CameraPresenter(Activity context, SurfaceView surfaceView, Size mDesiredPreviewSize) {
         mContext = context;
@@ -62,6 +68,24 @@ public class CameraPresenter implements SurfaceHolder.Callback, Camera.PreviewCa
         FrameLayout.LayoutParams layoutParams = new FrameLayout.LayoutParams(bestLayoutSize.getWidth(), bestLayoutSize.getHeight());
         layoutParams.gravity = Gravity.CENTER;
         surfaceView.setLayoutParams(layoutParams);
+    }
+
+    public CameraPresenter(Activity context, TextureView textureView, Size mDesiredPreviewSize) {
+        mContext = context;
+        this.mTextureView = textureView;
+        mTextureView.setSurfaceTextureListener(this);
+
+        DisplayMetrics dm = new DisplayMetrics();
+        context.getWindowManager().getDefaultDisplay().getMetrics(dm);
+        //获取宽高像素
+        screenWidth = dm.widthPixels;
+        screenHeight = dm.heightPixels;
+
+
+        Size bestLayoutSize = findBestLayoutSize(context, mDesiredPreviewSize);
+        FrameLayout.LayoutParams layoutParams = new FrameLayout.LayoutParams(bestLayoutSize.getWidth(), bestLayoutSize.getHeight());
+        layoutParams.gravity = Gravity.CENTER;
+        mTextureView.setLayoutParams(layoutParams);
     }
 
     public void setCameraCallBack(CameraCallBack mCameraCallBack) {
@@ -112,7 +136,7 @@ public class CameraPresenter implements SurfaceHolder.Callback, Camera.PreviewCa
         }
     }
 
-    //--------------------------------------------------------------------------
+    // region -------------------------SurfaceView callback-----------------------------------
     @Override
     public void surfaceCreated(@NonNull SurfaceHolder holder) {
         if (mCamera == null) {
@@ -131,7 +155,40 @@ public class CameraPresenter implements SurfaceHolder.Callback, Camera.PreviewCa
         releaseCamera();
     }
 
-    //--------------------------------------------------------------------------
+    //endregion
+
+
+    // region -------------------------TextureView callback-----------------------------------
+
+    @Override
+    public void onSurfaceTextureAvailable(@NonNull SurfaceTexture surface, int width, int height) {
+        if (mCamera == null) {
+            openCamera(mCameraId);
+        }
+        mSurfaceTexture = surface;
+        startPreview();
+
+    }
+
+    @Override
+    public void onSurfaceTextureSizeChanged(@NonNull SurfaceTexture surface, int width, int height) {
+
+    }
+
+    @Override
+    public boolean onSurfaceTextureDestroyed(@NonNull SurfaceTexture surface) {
+        mSurfaceTexture = null;
+        releaseCamera();
+        return false;
+    }
+
+    @Override
+    public void onSurfaceTextureUpdated(@NonNull SurfaceTexture surface) {
+
+    }
+
+    //endregion
+
     private void openCamera(int mCameraId) {
         boolean isSupportCamera = isSupport(mCameraId);
         if (isSupportCamera) {
@@ -144,15 +201,21 @@ public class CameraPresenter implements SurfaceHolder.Callback, Camera.PreviewCa
 
     }
 
-    private void startPreview() {
+    public void startPreview() {
         try {
             //根据所传入的SurfaceHolder对象来设置实时预览
-            mCamera.setPreviewDisplay(mSurfaceHolder);
+            if (mSurfaceHolder != null) {
+                mSurfaceHolder.setType(SurfaceHolder.SURFACE_TYPE_PUSH_BUFFERS);
+                mCamera.setPreviewDisplay(mSurfaceHolder);
+            }
+            if (mSurfaceTexture != null) {
+                mCamera.setPreviewTexture(mSurfaceTexture);
+            }
+
             //调整预览角度
             setCameraDisplayOrientation(mContext, mCameraId, mCamera);
             mCamera.startPreview();
-
-        } catch (IOException e) {
+        } catch (Exception e) {
             e.printStackTrace();
         }
     }
@@ -198,7 +261,14 @@ public class CameraPresenter implements SurfaceHolder.Callback, Camera.PreviewCa
         mParameters = mCamera.getParameters();
         //设置预览格式
         mParameters.setPreviewFormat(ImageFormat.NV21);
-        setPreviewSize(mSurfaceView.getMeasuredWidth(), mSurfaceView.getMeasuredHeight());
+        if (mSurfaceView != null) {
+            setPreviewSize(mSurfaceView.getMeasuredWidth(), mSurfaceView.getMeasuredHeight());
+        }
+
+        if (mTextureView != null) {
+            setPreviewSize(mTextureView.getMeasuredWidth(), mTextureView.getMeasuredHeight());
+        }
+
         setPictureSize();
         //连续自动对焦图像
         if (isSupportFocus(Camera.Parameters.FOCUS_MODE_CONTINUOUS_PICTURE)) {
@@ -382,11 +452,24 @@ public class CameraPresenter implements SurfaceHolder.Callback, Camera.PreviewCa
 
         float[] values = new float[9];
         matrix.getValues(values);
-        mSurfaceView.setTranslationX(values[Matrix.MTRANS_X]);
-        mSurfaceView.setTranslationY(values[Matrix.MTRANS_Y]);
-        mSurfaceView.setScaleX(values[Matrix.MSCALE_X]);
-        mSurfaceView.setScaleY(values[Matrix.MSCALE_Y]);
-        mSurfaceView.invalidate();
+
+        if (mSurfaceView != null) {
+            mSurfaceView.setTranslationX(values[Matrix.MTRANS_X]);
+            mSurfaceView.setTranslationY(values[Matrix.MTRANS_Y]);
+            mSurfaceView.setScaleX(values[Matrix.MSCALE_X]);
+            mSurfaceView.setScaleY(values[Matrix.MSCALE_Y]);
+            mSurfaceView.invalidate();
+        }
+
+
+        if (mTextureView != null) {
+            mTextureView.setTranslationX(values[Matrix.MTRANS_X]);
+            mTextureView.setTranslationY(values[Matrix.MTRANS_Y]);
+            mTextureView.setScaleX(values[Matrix.MSCALE_X]);
+            mTextureView.setScaleY(values[Matrix.MSCALE_Y]);
+            mTextureView.invalidate();
+        }
+
     }
 
 
@@ -501,6 +584,7 @@ public class CameraPresenter implements SurfaceHolder.Callback, Camera.PreviewCa
             mCameraCallBack.onPreviewFrame(data, camera);
         }
     }
+
 
     public interface CameraCallBack {
 
