@@ -481,7 +481,6 @@ public class Camera2SurfaceViewActivity extends AppCompatActivity implements Sur
         return new Size(displayWidth, displayHeight);
     }
 
-
     @Override
     public void surfaceCreated(@NonNull SurfaceHolder holder) {
         mPreviewSurface = holder.getSurface();

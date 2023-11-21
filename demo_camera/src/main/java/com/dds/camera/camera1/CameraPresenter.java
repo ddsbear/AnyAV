@@ -24,6 +24,9 @@ import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 
+import com.dds.base.camera.CameraUtils;
+import com.dds.base.utils.ThreadPoolUtil;
+
 import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
@@ -64,10 +67,10 @@ public class CameraPresenter implements SurfaceHolder.Callback, Camera.PreviewCa
         screenHeight = dm.heightPixels;
         mSurfaceHolder.addCallback(this);
 
-        Size bestLayoutSize = findBestLayoutSize(context, mDesiredPreviewSize);
+        Size bestLayoutSize = CameraUtils.findBestLayoutSize(context, mDesiredPreviewSize);
         FrameLayout.LayoutParams layoutParams = new FrameLayout.LayoutParams(bestLayoutSize.getWidth(), bestLayoutSize.getHeight());
         layoutParams.gravity = Gravity.CENTER;
-        surfaceView.setLayoutParams(layoutParams);
+        mSurfaceView.setLayoutParams(layoutParams);
     }
 
     public CameraPresenter(Activity context, TextureView textureView, Size mDesiredPreviewSize) {
@@ -82,7 +85,7 @@ public class CameraPresenter implements SurfaceHolder.Callback, Camera.PreviewCa
         screenHeight = dm.heightPixels;
 
 
-        Size bestLayoutSize = findBestLayoutSize(context, mDesiredPreviewSize);
+        Size bestLayoutSize = CameraUtils.findBestLayoutSize(context, mDesiredPreviewSize);
         FrameLayout.LayoutParams layoutParams = new FrameLayout.LayoutParams(bestLayoutSize.getWidth(), bestLayoutSize.getHeight());
         layoutParams.gravity = Gravity.CENTER;
         mTextureView.setLayoutParams(layoutParams);
@@ -103,14 +106,21 @@ public class CameraPresenter implements SurfaceHolder.Callback, Camera.PreviewCa
                     mCameraCallBack.onTakePicture(data, camera);
                 }
                 // save jpg
-                ThreadPoolUtil.execute(() -> {
-                    String title = genSaveTitle();
-                    String path = genDCIMCameraPath(title, JPEG_SUFFIX);
-                    save(data, path);
-                    rotateImageView(mCameraId, takePhotoOrientation, path);
-                    mContext.runOnUiThread(() -> {
-                        Toast.makeText(mContext, "save success " + title, Toast.LENGTH_SHORT).show();
-                    });
+                ThreadPoolUtil.executeByCached(new ThreadPoolUtil.SimpleTask<String>() {
+                    @Override
+                    public String doInBackground() {
+                        String path = CameraUtils.genDCIMCameraPath();
+                        // save image
+                        CameraUtils.saveImage(data, path);
+                        // rotate image
+                        CameraUtils.rotateImageView(mCameraId, takePhotoOrientation, path);
+                        return path;
+                    }
+
+                    @Override
+                    public void onSuccess(String result) {
+                        Toast.makeText(mContext, "save success:" + result, Toast.LENGTH_SHORT).show();
+                    }
                 });
 
 
@@ -460,8 +470,6 @@ public class CameraPresenter implements SurfaceHolder.Callback, Camera.PreviewCa
             mSurfaceView.setScaleY(values[Matrix.MSCALE_Y]);
             mSurfaceView.invalidate();
         }
-
-
         if (mTextureView != null) {
             mTextureView.setTranslationX(values[Matrix.MTRANS_X]);
             mTextureView.setTranslationY(values[Matrix.MTRANS_Y]);
@@ -472,111 +480,6 @@ public class CameraPresenter implements SurfaceHolder.Callback, Camera.PreviewCa
 
     }
 
-
-    public static void save(byte[] data, String savePath) {
-        try {
-            Log.d(TAG, "save jpeg");
-            FileOutputStream fileOut = new FileOutputStream(savePath);
-            BufferedOutputStream bufferOut = new BufferedOutputStream(fileOut);
-            bufferOut.write(data, 0, data.length);
-        } catch (Exception e) {
-            Log.e(TAG, "error save " + e.getMessage());
-        }
-    }
-
-
-    private void rotateImageView(int cameraId, int orientation, String path) {
-        Bitmap bitmap = BitmapFactory.decodeFile(path);
-        Matrix matrix = new Matrix();
-        matrix.postRotate((float) orientation);
-        // 创建新的图片
-        Bitmap resizedBitmap;
-
-        if (cameraId == 1) {
-            if (orientation == 90) {
-                matrix.postRotate(180f);
-            }
-        }
-        // 创建新的图片
-        resizedBitmap = Bitmap.createBitmap(bitmap, 0, 0,
-                bitmap.getWidth(), bitmap.getHeight(), matrix, true);
-
-        //新增 如果是前置 需要镜面翻转处理
-        if (cameraId == 1) {
-            Matrix matrix1 = new Matrix();
-            matrix1.postScale(-1f, 1f);
-            resizedBitmap = Bitmap.createBitmap(resizedBitmap, 0, 0,
-                    resizedBitmap.getWidth(), resizedBitmap.getHeight(), matrix1, true);
-
-        }
-
-
-        File file = new File(path);
-        //重新写入文件
-        try {
-            // 写入文件
-            FileOutputStream fos;
-            fos = new FileOutputStream(file);
-            //默认jpg
-            resizedBitmap.compress(Bitmap.CompressFormat.JPEG, 100, fos);
-            fos.flush();
-            fos.close();
-            resizedBitmap.recycle();
-        } catch (Exception e) {
-            e.printStackTrace();
-            return;
-        }
-
-    }
-
-    public static Size findBestLayoutSize(Context context, Size targetSize) {
-        DisplayMetrics metrics = context.getResources().getDisplayMetrics();
-        int displayWidth = metrics.widthPixels;
-        int displayHeight = metrics.heightPixels;
-
-        float ratio = (float) targetSize.getWidth() / targetSize.getHeight();
-        if (displayHeight > displayWidth) {
-            displayHeight = (int) (displayWidth * ratio);
-        } else {
-            displayWidth = (int) (displayHeight * ratio);
-        }
-        return new Size(displayWidth, displayHeight);
-    }
-
-
-    public static final String PRIMARY_STORAGE_PATH = Environment.getExternalStorageDirectory().toString();
-    public static final String CAMERA_STORAGE_PATH_SUFFIX = "DCIM/Camera/";
-    public static final String JPEG_SUFFIX = ".jpeg";
-
-    public static final String IMG_PREFIX = "IMG_";
-
-    private static int mDumpNum;
-    private static String mLastTitle;
-
-    public static String genSaveTitle() {
-        SimpleDateFormat formatter = new SimpleDateFormat("yyyy_MM_dd_HHmmss");
-        String titleTrunk = formatter.format(new Date());
-
-        StringBuilder builder = new StringBuilder();
-        builder.append(IMG_PREFIX)
-                .append(titleTrunk);
-        if (titleTrunk.equals(mLastTitle)) {
-            mDumpNum++;
-            builder.append("_").append(mDumpNum);
-        } else {
-            mLastTitle = titleTrunk;
-            mDumpNum = 0;
-        }
-        return builder.toString();
-    }
-
-    public static String genDCIMCameraPath(String title, String suffix) {
-        return PRIMARY_STORAGE_PATH +
-                File.separator +
-                CAMERA_STORAGE_PATH_SUFFIX +
-                title +
-                suffix;
-    }
 
     @Override
     public void onPreviewFrame(byte[] data, Camera camera) {
