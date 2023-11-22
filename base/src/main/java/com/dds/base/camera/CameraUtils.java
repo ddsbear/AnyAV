@@ -13,7 +13,11 @@ import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.Date;
+import java.util.List;
 import java.util.Locale;
 
 public class CameraUtils {
@@ -111,4 +115,43 @@ public class CameraUtils {
         }
         return new Size(displayWidth, displayHeight);
     }
+
+
+    /**
+     * Choose the most appropriate size
+     * larger than or equal to the desired size
+     * If you don't find a suitable one, use the first one.
+     *
+     * @param choices     choices
+     * @param desiredSize desiredSize
+     * @return OptimalSize
+     */
+    public static Size chooseOptimalSize(Size[] choices, Size desiredSize) {
+        List<Size> bigEnough = new ArrayList<>();
+        int w = desiredSize.getWidth();
+        int h = desiredSize.getHeight();
+        for (Size option : choices) {
+            if (option.getHeight() == option.getWidth() * h / w && option.getWidth() >= w && option.getHeight() >= h) {
+                bigEnough.add(option);
+            }
+        }
+        // Pick the smallest of those, assuming we found any
+        if (bigEnough.size() > 0) {
+            return Collections.min(bigEnough, new CompareSizesByArea());
+        } else {
+            Log.e(TAG, "Couldn't find any suitable preview size");
+            return choices[0];
+        }
+    }
+
+    public static class CompareSizesByArea implements Comparator<Size> {
+        @Override
+        public int compare(Size lhs, Size rhs) {
+            // We cast here to ensure the multiplications won't overflow
+            return Long.signum((long) lhs.getWidth() * lhs.getHeight() -
+                    (long) rhs.getWidth() * rhs.getHeight());
+        }
+    }
+
+
 }
