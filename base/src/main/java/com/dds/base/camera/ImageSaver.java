@@ -1,4 +1,4 @@
-package com.dds.camera.camera2;
+package com.dds.base.camera;
 
 import android.content.Context;
 import android.content.Intent;

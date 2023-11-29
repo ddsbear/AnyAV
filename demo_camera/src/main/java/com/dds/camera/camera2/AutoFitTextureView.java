@@ -1,4 +1,4 @@
-package com.dds.gles.demo3.view;
+package com.dds.camera.camera2;
 
 import android.content.Context;
 import android.util.AttributeSet;
@@ -22,12 +22,13 @@ public class AutoFitTextureView extends TextureView {
         super(context, attrs, defStyleAttr);
     }
 
-    public void setAspectRatio(int width, int height) {
+    public void setAspectRation(int width, int height) {
         if (width < 0 || height < 0) {
             throw new IllegalArgumentException("width or height can not be negative.");
         }
         ratioW = width;
         ratioH = height;
+        //请求重新布局
         requestLayout();
     }
 
@@ -38,8 +39,10 @@ public class AutoFitTextureView extends TextureView {
         int height = MeasureSpec.getSize(heightMeasureSpec);
 
         if (0 == ratioW || 0 == ratioH) {
+            //未设定宽高比，使用预览窗口默认宽高
             setMeasuredDimension(width, height);
         } else {
+            //设定宽高比，调整预览窗口大小（调整后窗口大小不超过默认值）
             if (width < height * ratioW / ratioH) {
                 setMeasuredDimension(width, width * ratioH / ratioW);
             } else {

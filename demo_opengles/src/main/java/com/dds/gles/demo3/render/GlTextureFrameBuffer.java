@@ -20,7 +20,6 @@ public class GlTextureFrameBuffer {
     private int width;
     private int height;
 
-
     public GlTextureFrameBuffer(int pixelFormat) {
         switch (pixelFormat) {
             case GLES20.GL_LUMINANCE:
@@ -34,7 +33,6 @@ public class GlTextureFrameBuffer {
         this.width = 0;
         this.height = 0;
     }
-
 
     public void setSize(int width, int height) {
         if (width <= 0 || height <= 0) {

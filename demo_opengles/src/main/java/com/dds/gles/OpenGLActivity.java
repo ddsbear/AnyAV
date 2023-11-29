@@ -13,9 +13,9 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.dds.base.permission.PermissionUtils;
 import com.dds.base.permission.Permissions;
-import com.dds.gles.demo2.camera.preview.PreviewCameraActivity;
-import com.dds.gles.demo2.camera.takepic.TakePictureActivity;
+import com.dds.gles.demo1.GLCameraActivity;
 import com.dds.gles.demo3.RenderSurfaceViewActivity;
 
 import java.util.ArrayList;
@@ -26,15 +26,8 @@ public class OpenGLActivity extends AppCompatActivity implements View.OnClickLis
     private static final ArrayList<MenuBean> mData = new ArrayList<>();
 
     static {
-//        add("绘制图形", GLGraphicalActivity.class);
-//        add("绘制图片", GLImageActivity.class);
-
-        add("预览+camera1", PreviewCameraActivity.class);
-        add("拍照+camera1", TakePictureActivity.class);
-
-//        add("绘制OES+Camera2", GLCameraActivity.class);
-        add("离屏OES+Camera2+SurfaceView", RenderSurfaceViewActivity.class);
-//        add("离屏OES+Camera2+TextureView", Render2Activity.class);
+        add("OES+Camera2+GLSurfaceView", GLCameraActivity.class);
+        add("OES+Camera2+SurfaceView", RenderSurfaceViewActivity.class);
     }
 
     @Override
@@ -45,15 +38,7 @@ public class OpenGLActivity extends AppCompatActivity implements View.OnClickLis
         recyclerView.setLayoutManager(new LinearLayoutManager(this, LinearLayoutManager.VERTICAL, false));
         initData();
 
-        Permissions.request(this, new String[]{
-                Manifest.permission.CAMERA,
-                Manifest.permission.WRITE_EXTERNAL_STORAGE
-        }, integer -> {
-            if (integer != 0) {
-                Toast.makeText(this, "请给权限", Toast.LENGTH_LONG).show();
-            }
-
-        });
+        PermissionUtils.requestCameraPermission(this);
     }
 
     // 初始化按钮列表

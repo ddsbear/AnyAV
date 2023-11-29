@@ -7,7 +7,7 @@
     android:layout_height="match_parent"
     tools:context="com.dds.camera.camera2.Camera2SurfaceViewActivity">
 
-    <com.dds.camera.view.AutoFitSurfaceView
+    <com.dds.camera.camera2.AutoFitSurfaceView
         android:id="@+id/preview_surface"
         android:layout_width="match_parent"
         android:layout_height="match_parent"

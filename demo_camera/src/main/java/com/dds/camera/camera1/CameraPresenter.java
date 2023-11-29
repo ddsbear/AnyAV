@@ -98,6 +98,7 @@ public class CameraPresenter implements SurfaceHolder.Callback, Camera.PreviewCa
 
     public void takePicture(final int takePhotoOrientation) {
         if (mCamera != null) {
+            Log.d(TAG, "takePicture start");
             mCamera.takePicture(null, null, (data, camera) -> {
                 // reset preview
                 mCamera.startPreview();
@@ -119,6 +120,7 @@ public class CameraPresenter implements SurfaceHolder.Callback, Camera.PreviewCa
 
                     @Override
                     public void onSuccess(String result) {
+                        Log.d(TAG, "takePicture onSuccess");
                         Toast.makeText(mContext, "save success:" + result, Toast.LENGTH_SHORT).show();
                     }
                 });

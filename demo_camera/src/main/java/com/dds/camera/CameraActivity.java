@@ -15,6 +15,7 @@ import android.widget.Button;
 import android.widget.RelativeLayout;
 import android.widget.Toast;
 
+import com.dds.base.permission.PermissionUtils;
 import com.dds.base.permission.Permissions;
 import com.dds.camera.camera1.Camera1SurfaceViewActivity;
 import com.dds.camera.camera1.Camera1TextureViewActivity;
@@ -43,18 +44,7 @@ public class CameraActivity extends AppCompatActivity implements View.OnClickLis
         recyclerView.setLayoutManager(new LinearLayoutManager(this, LinearLayoutManager.VERTICAL, false));
         initData();
 
-        String[] permissions;
-
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            permissions = new String[]{Manifest.permission.CAMERA, Manifest.permission.READ_MEDIA_IMAGES};
-        } else {
-            permissions = new String[]{Manifest.permission.CAMERA, Manifest.permission.READ_EXTERNAL_STORAGE};
-        }
-        Permissions.request(this, permissions, integer -> {
-            if (integer != 0) {
-                Toast.makeText(this, "请给权限", Toast.LENGTH_LONG).show();
-            }
-        });
+        PermissionUtils.requestCameraPermission(this);
     }
 
     private void initData() {

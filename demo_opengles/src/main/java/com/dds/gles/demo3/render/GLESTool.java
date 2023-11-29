@@ -3,10 +3,12 @@ package com.dds.gles.demo3.render;
 import android.content.Context;
 import android.content.res.AssetManager;
 import android.content.res.Configuration;
+import android.opengl.EGL14;
 import android.opengl.GLES11Ext;
 import android.opengl.GLES20;
 import android.opengl.GLES30;
 import android.opengl.GLException;
+import android.opengl.GLUtils;
 import android.util.DisplayMetrics;
 import android.view.Display;
 import android.view.WindowManager;
@@ -21,6 +23,12 @@ import java.nio.FloatBuffer;
 
 public class GLESTool {
 
+    public static class EglError extends RuntimeException {
+
+        public EglError(String error) {
+            super(error + GLUtils.getEGLErrorString(EGL14.eglGetError()));
+        }
+    }
     public static class GlOutOfMemoryException extends GLException {
         public GlOutOfMemoryException(int error, String msg) {
             super(error, msg);
@@ -118,25 +126,6 @@ public class GLESTool {
         return s.hasNext() ? s.next() : "";
     }
 
-    /**
-     * 判断是否为平板
-     */
-    public static boolean isPad(Context context) {
-        boolean result = false;
-        WindowManager wm = (WindowManager) context.getSystemService(Context.WINDOW_SERVICE);
-        Display display = wm.getDefaultDisplay();
-        DisplayMetrics dm = new DisplayMetrics();
-        display.getMetrics(dm);
-        double x = Math.pow(dm.widthPixels / dm.xdpi, 2);
-        double y = Math.pow(dm.heightPixels / dm.ydpi, 2);
-        // 屏幕尺寸
-        double screenInches = Math.sqrt(x + y);
-        // 大于7尺寸则为Pad
-        if (screenInches >= 7.0) {
-            result = true;
-        }
-        return result;
-    }
 
     /**
      * 判断是否为平板

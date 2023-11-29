@@ -163,13 +163,13 @@ public class RenderManager {
             // 1. eglGetDisplay
             mEGLDisplay = EGL14.eglGetDisplay(EGL14.EGL_DEFAULT_DISPLAY);
             if (mEGLDisplay == EGL14.EGL_NO_DISPLAY) {
-                throw new EglError("eglGetDisplay failed:");
+                throw new GLESTool.EglError("eglGetDisplay failed:");
             }
             Log.d(TAG, "initOffScreenGL: 1. EGL eglGetDisplay success");
             int[] version = new int[2];
             // 2. eglInitialize
             if (!EGL14.eglInitialize(mEGLDisplay, version, /*offset*/ 0, version, /*offset*/ 1)) {
-                throw new EglError("eglInitialize failed:");
+                throw new GLESTool.EglError("eglInitialize failed:");
             }
             Log.d(TAG, "initOffScreenGL: 2. EGL eglInitialize success");
             int attribList[] = {
@@ -189,7 +189,7 @@ public class RenderManager {
             // 3. eglChooseConfig
             EGL14.eglChooseConfig(mEGLDisplay, attribList, 0, configs, 0, configs.length, numConfigs, 0);
             if (numConfigs[0] <= 0) {
-                throw new EglError("eglChooseConfig failed:");
+                throw new GLESTool.EglError("eglChooseConfig failed:");
             }
             Log.d(TAG, "initOffScreenGL: 3. EGL eglChooseConfig success");
 
@@ -202,7 +202,7 @@ public class RenderManager {
             // 4. eglCreateContext
             mEGLContext = EGL14.eglCreateContext(mEGLDisplay, mConfig, EGL14.EGL_NO_CONTEXT, attribList2, 0);
             if (mEGLContext == EGL14.EGL_NO_CONTEXT) {
-                throw new EglError("eglCreateContext failed:");
+                throw new GLESTool.EglError("eglCreateContext failed:");
             }
             Log.d(TAG, "initOffScreenGL: 4. EGL eglCreateContext success");
             int[] attributes = new int[]{
@@ -213,14 +213,14 @@ public class RenderManager {
             // 5. eglCreatePbufferSurface
             mStubEglSurface = EGL14.eglCreatePbufferSurface(mEGLDisplay, mConfig, attributes, 0);
             if (mStubEglSurface == null || mStubEglSurface == EGL14.EGL_NO_SURFACE) {
-                throw new EglError("eglCreatePbufferSurface failed:");
+                throw new GLESTool.EglError("eglCreatePbufferSurface failed:");
             }
             Log.d(TAG, "initOffScreenGL: 5. EGL eglCreatePbufferSurface success");
 
             // 6. eglMakeCurrent
             boolean success = EGL14.eglMakeCurrent(mEGLDisplay, mStubEglSurface, mStubEglSurface, mEGLContext);
             if (!success) {
-                throw new EglError("eglMakeCurrent failed:");
+                throw new GLESTool.EglError("eglMakeCurrent failed:");
             }
             Log.d(TAG, "initOffScreenGL: 6. EGL eglMakeCurrent success");
 

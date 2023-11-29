@@ -1,4 +1,4 @@
-package com.dds.camera.view;
+package com.dds.camera.camera2;
 
 import android.content.Context;
 import android.util.AttributeSet;

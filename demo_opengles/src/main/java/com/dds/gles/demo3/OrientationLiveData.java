@@ -1,4 +1,4 @@
-package com.dds.gles.demo3.render;
+package com.dds.gles.demo3;
 
 import android.content.Context;
 import android.hardware.camera2.CameraCharacteristics;
@@ -52,7 +52,8 @@ public class OrientationLiveData extends LiveData<Integer> {
     }
 
     private int computeRelativeRotation(CameraCharacteristics characteristics, int surfaceRotation) {
-        int sensorOrientationDegrees = characteristics.get(CameraCharacteristics.SENSOR_ORIENTATION);
+        Integer integer = characteristics.get(CameraCharacteristics.SENSOR_ORIENTATION);
+        int sensorOrientationDegrees = integer == null ? 0 : integer;
         int deviceOrientationDegrees = 0;
         switch (surfaceRotation) {
             case Surface.ROTATION_90:
@@ -65,7 +66,11 @@ public class OrientationLiveData extends LiveData<Integer> {
                 deviceOrientationDegrees = 270;
                 break;
         }
-        int sign = characteristics.get(CameraCharacteristics.LENS_FACING) == CameraCharacteristics.LENS_FACING_FRONT ? 1 : -1;
+        Integer integerLens = characteristics.get(CameraCharacteristics.LENS_FACING);
+        int sign = 1;
+        if (integerLens != null) {
+            sign = integerLens == CameraCharacteristics.LENS_FACING_FRONT ? 1 : -1;
+        }
         return (sensorOrientationDegrees - (deviceOrientationDegrees * sign) + 360) % 360;
     }
 }

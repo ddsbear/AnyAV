@@ -7,6 +7,9 @@
     <uses-permission
         android:name="android.permission.WRITE_EXTERNAL_STORAGE"
         tools:ignore="ScopedStorage" />
+    <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
+    <uses-permission android:name="android.permission.READ_MEDIA_VIDEO" />
+    <uses-permission android:name="android.permission.READ_MEDIA_AUDIO" />
 
     <uses-feature android:name="android.hardware.camera" />
     <uses-feature android:name="android.hardware.camera.autofocus" /> <!-- GLSL ES Version | OpenGL ES version | Shader Preprocessor | Release Date -->
@@ -28,7 +31,7 @@
                 android:value="" />
         </activity>
         <activity
-            android:name=".demo1.ui.GLCameraActivity"
+            android:name=".demo1.GLCameraActivity"
             android:configChanges="orientation|screenSize|screenLayout|keyboardHidden|mcc|mnc|navigation|keyboard"
             android:exported="true"
             android:theme="@style/Theme.AppCompat.NoActionBar"
@@ -37,10 +40,7 @@
                 android:name="android.app.lib_name"
                 android:value="" />
         </activity>
-        <activity android:name=".demo1.ui.GLGraphicalActivity" />
-        <activity android:name=".demo1.ui.GLImageActivity" />
         <activity android:name="com.dds.gles.demo3.RenderSurfaceViewActivity" />
-        <activity android:name="com.dds.gles.demo3.RenderTextureViewActivity" />
     </application>
 
 </manifest>
