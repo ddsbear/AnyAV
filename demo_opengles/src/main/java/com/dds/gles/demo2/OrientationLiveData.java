@@ -1,4 +1,4 @@
-package com.dds.gles.demo3;
+package com.dds.gles.demo2;
 
 import android.content.Context;
 import android.hardware.camera2.CameraCharacteristics;
@@ -41,13 +41,11 @@ public class OrientationLiveData extends LiveData<Integer> {
 
     @Override
     protected void onActive() {
-        super.onActive();
         listener.enable();
     }
 
     @Override
     protected void onInactive() {
-        super.onInactive();
         listener.disable();
     }
 

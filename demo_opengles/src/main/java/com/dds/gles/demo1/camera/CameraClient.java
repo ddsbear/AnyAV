@@ -60,7 +60,7 @@ public class CameraClient {
     public void startPreview() {
         Surface previewSurface = new Surface(surfaceTexture);
         try {
-            captureRequestBuilder = mDevice.createCaptureRequest(CameraDevice.TEMPLATE_PREVIEW);
+            captureRequestBuilder = mDevice.createCaptureRequest(android.hardware.camera2.CameraDevice.TEMPLATE_PREVIEW);
             captureRequestBuilder.addTarget(previewSurface);
             mDevice.createCaptureSession(Collections.singletonList(previewSurface), stateCallBack, mHandler);
         } catch (CameraAccessException e) {
@@ -85,7 +85,7 @@ public class CameraClient {
         return surfaceTexture;
     }
 
-    class MyStateCallBack extends CameraCaptureSession.StateCallback {
+    private class MyStateCallBack extends CameraCaptureSession.StateCallback {
 
         @Override
         public void onConfigured(@NonNull CameraCaptureSession session) {

@@ -1,4 +1,4 @@
-package com.dds.gles.demo3.render;
+package com.dds.gles.demo2.render;
 
 import android.graphics.SurfaceTexture;
 import android.opengl.EGL14;
@@ -7,6 +7,7 @@ import android.opengl.EGLContext;
 import android.opengl.EGLDisplay;
 import android.opengl.EGLExt;
 import android.opengl.EGLSurface;
+import android.opengl.GLES20;
 import android.os.Handler;
 import android.os.HandlerThread;
 import android.os.Looper;
@@ -53,7 +54,6 @@ public class RenderManager {
 
     public void setRotation(int rotation) {
         synchronized (syncOp) {
-            Log.d(TAG, "setRotation: " + rotation);
             mHandler.removeMessages(GLHandler.MSG_ROTATION);
             mHandler.sendMessage(mHandler.obtainMessage(GLHandler.MSG_ROTATION, rotation, 0));
         }
@@ -92,32 +92,40 @@ public class RenderManager {
 
     }
 
+    public void enableFilter(boolean enableFilter) {
+        synchronized (syncOp) {
+            mHandler.removeMessages(GLHandler.MSG_FILTER);
+            mHandler.sendMessage(mHandler.obtainMessage(GLHandler.MSG_FILTER, enableFilter ? 1 : 0, 0));
+        }
+    }
+
     private static class GLHandler extends Handler {
 
-        static final int MSG_SETUP = 0x003;
-        static final int MSG_RELEASE = 0x002;
-        static final int MSG_DRAW_FRAME = 0x004;
-        static final int MSG_PREVIEW = 0x005;
-        static final int MSG_ROTATION = 0x006;
-
-        static final int MSG_RESOLUTION = 0x007;
+        static final int MSG_SETUP = 0x01;
+        static final int MSG_DRAW_FRAME = 0x02;
+        static final int MSG_PREVIEW = 0x03;
+        static final int MSG_ROTATION = 0x04;
+        static final int MSG_RESOLUTION = 0x05;
+        static final int MSG_RELEASE = 0x06;
+        static final int MSG_FILTER = 0x07;
 
         private EGLDisplay mEGLDisplay = EGL14.EGL_NO_DISPLAY;
         private EGLConfig mConfig;
         private EGLContext mEGLContext = EGL14.EGL_NO_CONTEXT;
         private EGLSurface mStubEglSurface;
         private int mTextureID;
+        private GlFrameBuffer mFrameBuffer;
 
         public volatile SurfaceTexture mSurfaceTexture;
-
         private final CompletableFuture<SurfaceTexture> mSurfaceFuture;
-
-        private TextureRenderer mOesTextureRenderer;
+        private GlTextureRenderer mGlTextureRenderer;
 
         private int mWidth;
         private int mHeight;
 
         private EGLSurface previewEglSurface;
+
+        private boolean isFilterEnable;
 
         public GLHandler(Looper looper) {
             super(looper);
@@ -149,11 +157,13 @@ public class RenderManager {
                 case MSG_RESOLUTION:
                     handleSetResolution(msg.arg1, msg.arg2);
                     break;
+                case MSG_FILTER:
+                    handleFilter(msg.arg1);
+                    break;
                 default:
                     break;
             }
         }
-
 
         private void initOffScreenGL() {
             if (mEGLDisplay != EGL14.EGL_NO_DISPLAY) {
@@ -235,9 +245,11 @@ public class RenderManager {
             Log.d(TAG, "handleSetup: createOESTexture width = " + width + ",height = " + height);
             mSurfaceTexture = new SurfaceTexture(mTextureID);
             Log.d(TAG, "handleSetup: mSurfaceTexture = " + mSurfaceTexture);
-            mOesTextureRenderer = new TextureRenderer();
-            mOesTextureRenderer.init();
+            mGlTextureRenderer = new GlTextureRenderer();
             mSurfaceFuture.complete(mSurfaceTexture);
+
+            mFrameBuffer = new GlFrameBuffer(GLES20.GL_RGB);
+            mFrameBuffer.allocateBuffers(mWidth, mHeight);
         }
 
         private void handleStartPreview(Surface surface) {
@@ -256,24 +268,39 @@ public class RenderManager {
 
         }
 
-
         private void handleDrawFrame() {
             mSurfaceTexture.updateTexImage();
-            // eglMakeCurrent
-            EGL14.eglMakeCurrent(mEGLDisplay, previewEglSurface, previewEglSurface, mEGLContext);
-            // draw
-            mOesTextureRenderer.draw(mSurfaceTexture, mTextureID, mWidth, mHeight);
-            // eglSwapBuffers
-            EGL14.eglSwapBuffers(mEGLDisplay, previewEglSurface);
+            if (isFilterEnable) {
+
+                GLES20.glViewport(0, 0, mFrameBuffer.getWidth(), mFrameBuffer.getHeight());
+
+                // eglMakeCurrent
+                EGL14.eglMakeCurrent(mEGLDisplay, previewEglSurface, previewEglSurface, mEGLContext);
+                // draw
+                float[] mSTMatrix = new float[16];
+                mSurfaceTexture.getTransformMatrix(mSTMatrix);
+                mGlTextureRenderer.prepareShader(GlTextureRenderer.ShaderType.RGB);
+                mGlTextureRenderer.drawTexture(mFrameBuffer.getTextureId(), mSTMatrix, 0, 0, mWidth, mHeight);
+                // eglSwapBuffers
+                EGL14.eglSwapBuffers(mEGLDisplay, previewEglSurface);
+
+            } else {
+                // eglMakeCurrent
+                EGL14.eglMakeCurrent(mEGLDisplay, previewEglSurface, previewEglSurface, mEGLContext);
+                // draw
+                float[] mSTMatrix = new float[16];
+                mSurfaceTexture.getTransformMatrix(mSTMatrix);
+                mGlTextureRenderer.prepareShader(GlTextureRenderer.ShaderType.OES);
+                mGlTextureRenderer.drawTexture(mTextureID, mSTMatrix, 0, 0, mWidth, mHeight);
+                // eglSwapBuffers
+                EGL14.eglSwapBuffers(mEGLDisplay, previewEglSurface);
+            }
+
 
         }
 
         private void handleSetRotation(int rotation) {
-            Log.d(TAG, "handleSetRotation1: rotation " + rotation);
-            if (mOesTextureRenderer != null) {
-                Log.d(TAG, "handleSetRotation2: rotation " + rotation);
-                mOesTextureRenderer.setRotation(rotation);
-            }
+
         }
 
         private void handleSetResolution(int width, int height) {
@@ -281,11 +308,13 @@ public class RenderManager {
             this.mHeight = height;
         }
 
-
         private void releaseEGLContext() {
             if (mEGLDisplay != EGL14.EGL_NO_DISPLAY) {
-                if (mOesTextureRenderer != null) {
-                    mOesTextureRenderer.release();
+                if (mFrameBuffer != null) {
+                    mFrameBuffer.release();
+                }
+                if (mGlTextureRenderer != null) {
+                    mGlTextureRenderer.release();
                 }
                 EGL14.eglMakeCurrent(mEGLDisplay, EGL14.EGL_NO_SURFACE, EGL14.EGL_NO_SURFACE,
                         EGL14.EGL_NO_CONTEXT);
@@ -309,7 +338,14 @@ public class RenderManager {
             }
         }
 
+        private void handleFilter(int arg1) {
+            if (arg1 == 1) {
+                isFilterEnable = true;
+            } else {
+                isFilterEnable = false;
+            }
 
+        }
     }
 
 }

@@ -1,4 +1,4 @@
-package com.dds.gles.demo3.render;
+package com.dds.gles.demo2.render;
 
 import android.opengl.GLES20;
 import android.util.Log;

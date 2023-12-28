@@ -2,27 +2,23 @@ package com.dds.gles.demo1.camera;
 
 import android.content.Context;
 import android.graphics.SurfaceTexture;
-import android.hardware.camera2.CameraDevice;
 import android.os.Handler;
 import android.os.HandlerThread;
 import android.util.Log;
 
 import androidx.annotation.NonNull;
 
-public class MyManager {
+public class Camera2Manager {
 
     private static final String TAG = "MyManager";
     private final Context mContext;
     private Handler mCameraHandler;
     private HandlerThread mCameraThread;
-    private CameraStateCallback stateCallback;
-
     private CameraClient mClient;
+    private final CameraStateCallback stateCallback = new CameraStateCallback();
 
-
-    public MyManager(Context context) {
+    public Camera2Manager(Context context) {
         mContext = context;
-        stateCallback = new CameraStateCallback();
         startCameraThread();
     }
 
@@ -31,12 +27,12 @@ public class MyManager {
         mClient.openCamera(mContext, stateCallback, mCameraHandler);
     }
 
-    public void release() {
+    public void closeCamera() {
         stopCameraThread();
         mClient.release();
     }
 
-    public SurfaceTexture getSurfaceTexture(){
+    public SurfaceTexture getSurfaceTexture() {
         return mClient.getSurfaceTexture();
     }
 
@@ -59,23 +55,29 @@ public class MyManager {
 
     }
 
-    class CameraStateCallback extends CameraDevice.StateCallback {
+
+    private class CameraStateCallback extends android.hardware.camera2.CameraDevice.StateCallback {
 
         @Override
-        public void onOpened(@NonNull CameraDevice cameraDevice) {
+        public void onOpened(@NonNull android.hardware.camera2.CameraDevice cameraDevice) {
             Log.d(TAG, "onOpened: ");
             mClient.setDevice(cameraDevice);
             mClient.startPreview();
         }
 
         @Override
-        public void onDisconnected(@NonNull CameraDevice camera) {
+        public void onDisconnected(@NonNull android.hardware.camera2.CameraDevice camera) {
             Log.d(TAG, "onDisconnected: ");
 
         }
 
         @Override
-        public void onError(@NonNull CameraDevice camera, int error) {
+        public void onClosed(@NonNull android.hardware.camera2.CameraDevice camera) {
+            Log.d(TAG, "onClosed: ");
+        }
+
+        @Override
+        public void onError(@NonNull android.hardware.camera2.CameraDevice camera, int error) {
             Log.d(TAG, "onError: ");
         }
     }

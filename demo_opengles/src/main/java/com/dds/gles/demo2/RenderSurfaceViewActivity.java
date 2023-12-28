@@ -1,4 +1,4 @@
-package com.dds.gles.demo3;
+package com.dds.gles.demo2;
 
 import android.Manifest;
 import android.content.Context;
@@ -18,12 +18,12 @@ import android.hardware.camera2.params.StreamConfigurationMap;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.HandlerThread;
-import android.util.DisplayMetrics;
 import android.util.Log;
 import android.util.Size;
 import android.view.Gravity;
 import android.view.Surface;
 import android.view.SurfaceHolder;
+import android.view.View;
 import android.widget.FrameLayout;
 
 import androidx.annotation.NonNull;
@@ -33,15 +33,11 @@ import androidx.core.app.ActivityCompat;
 import com.dds.base.camera.CameraUtils;
 import com.dds.base.utils.StatueBarUtils;
 import com.dds.gles.R;
-import com.dds.gles.demo3.render.GLESTool;
-import com.dds.gles.demo3.render.RenderManager;
-import com.dds.gles.demo3.view.AutoFitSurfaceView;
+import com.dds.gles.demo2.render.GLESTool;
+import com.dds.gles.demo2.render.RenderManager;
+import com.dds.gles.demo2.view.AutoFitSurfaceView;
 
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Semaphore;
@@ -80,11 +76,13 @@ public class RenderSurfaceViewActivity extends AppCompatActivity implements Surf
 
     private boolean isConfigOrientated;
 
+    private boolean isFilterEnable;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         StatueBarUtils.setStatusBarOrScreenStatus(this);
-        if (!GLESTool.isTablet(this)) {
+        if (!Utils.isTablet(this)) {
             setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
         }
         setContentView(R.layout.activity_render);
@@ -131,13 +129,20 @@ public class RenderSurfaceViewActivity extends AppCompatActivity implements Surf
         params.gravity = Gravity.CENTER;
 
 
-        if (GLESTool.isTablet(this)) {
+        if (Utils.isTablet(this)) {
             Integer dataValue = orientationLiveData.getValue();
             if (dataValue != null) {
                 mRenderManager.setRotation(dataValue);
             }
         }
 
+    }
+
+    public void onClick(View view) {
+        int id = view.getId();
+        if (id == R.id.btn_filter) {
+            handleFilter();
+        }
     }
 
     private void initView() {
@@ -154,7 +159,7 @@ public class RenderSurfaceViewActivity extends AppCompatActivity implements Surf
         try {
             String[] cameraIdList = manager.getCameraIdList();
             if (cameraIdList.length > 0) {
-                initCameraConfig(cameraIdList[0]);
+                initCameraConfig(cameraIdList[1]);
             } else {
                 throw new CameraAccessException(CameraAccessException.CAMERA_ERROR, "No camera available");
             }
@@ -209,7 +214,7 @@ public class RenderSurfaceViewActivity extends AppCompatActivity implements Surf
 
     private void setUpOutputSurfaces() {
         Log.d(TAG, "setUpOutputSurfaces: preview width = " + mPreviewSize.getWidth() + ",height = " + mPreviewSize.getHeight());
-        mRenderManager.setup(mPreviewSurfaceWidth, mPreviewSurfaceHeight);
+        mRenderManager.setup(mPreviewSize.getWidth(), mPreviewSize.getHeight());
         mRenderManager.startPreview(mPreviewSurface);
     }
 
@@ -248,6 +253,18 @@ public class RenderSurfaceViewActivity extends AppCompatActivity implements Surf
             mCameraOpenCloseLock.release();
         }
     }
+
+    private void handleFilter() {
+        if (!isFilterEnable) {
+            isFilterEnable = true;
+            mRenderManager.enableFilter(true);
+        } else {
+            isFilterEnable = false;
+            mRenderManager.enableFilter(false);
+        }
+
+    }
+
 
     private final CameraDevice.StateCallback mStateCallback = new CameraDevice.StateCallback() {
         @Override
@@ -306,7 +323,7 @@ public class RenderSurfaceViewActivity extends AppCompatActivity implements Surf
                     } catch (CameraAccessException e) {
                         throw new RuntimeException(e);
                     }
-                    if (GLESTool.isTablet(RenderSurfaceViewActivity.this) && orientationLiveData.getValue() != null) {
+                    if (Utils.isTablet(RenderSurfaceViewActivity.this) && orientationLiveData.getValue() != null) {
                         mRenderManager.setRotation(orientationLiveData.getValue());
                     }
                 }
@@ -370,5 +387,6 @@ public class RenderSurfaceViewActivity extends AppCompatActivity implements Surf
     public void surfaceDestroyed(@NonNull SurfaceHolder holder) {
         mPreviewSurface = null;
     }
+
 
 }

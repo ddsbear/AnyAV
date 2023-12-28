@@ -1,6 +1,7 @@
-package com.dds.gles.demo1.utils;
+package com.dds.gles.utils;
 
 import android.content.Context;
+import android.opengl.Matrix;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -30,5 +31,29 @@ public class OpenGLUtils {
         return sb.toString();
     }
 
+    /**
+     * Scale operations on matrices
+     *
+     * @param matrix matrix array
+     * @param x Scale along the x-axis
+     * @param y Scale along the y-axis
+     */
+    public static void scaleMatrix(float[] matrix, int x, int y) {
+        Matrix.translateM(matrix, 0, 0.5f, 0.5f, 0);
+        Matrix.scaleM(matrix, 0, x, y, 1);
+        Matrix.translateM(matrix, 0, -0.5f, -0.5f, 0);
+    }
+
+    /**
+     * Rotate the matrix
+     *
+     * @param matrix matrix array
+     * @param degree Rotation angle
+     */
+    public static void rotateMatrix(float[] matrix, int degree) {
+        Matrix.translateM(matrix, 0, 0.5f, 0.5f, 0);
+        Matrix.rotateM(matrix, 0, degree, 0, 0, 1);
+        Matrix.translateM(matrix, 0, -0.5f, -0.5f, 0);
+    }
 
 }

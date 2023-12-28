@@ -1,27 +1,21 @@
-package com.dds.gles.demo3.render;
+package com.dds.gles.demo2.render;
 
-import android.content.Context;
-import android.content.res.AssetManager;
-import android.content.res.Configuration;
 import android.opengl.EGL14;
 import android.opengl.GLES11Ext;
 import android.opengl.GLES20;
 import android.opengl.GLES30;
 import android.opengl.GLException;
 import android.opengl.GLUtils;
-import android.util.DisplayMetrics;
-import android.view.Display;
-import android.view.WindowManager;
+import android.util.Log;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.FloatBuffer;
+import java.util.Locale;
 
 public class GLESTool {
+
+    public static final boolean GL_ASSERTIONS_ENABLED = true;
 
     public static class EglError extends RuntimeException {
 
@@ -29,6 +23,7 @@ public class GLESTool {
             super(error + GLUtils.getEGLErrorString(EGL14.eglGetError()));
         }
     }
+
     public static class GlOutOfMemoryException extends GLException {
         public GlOutOfMemoryException(int error, String msg) {
             super(error, msg);
@@ -41,6 +36,24 @@ public class GLESTool {
             throw error == GLES20.GL_OUT_OF_MEMORY
                     ? new GlOutOfMemoryException(error, op)
                     : new GLException(error, op + " glError 0x" + Integer.toHexString(error));
+        }
+    }
+
+    public static void checkGlErrors(String tag, String op) {
+        int lastError = GLES20.GL_NO_ERROR;
+        do {
+            // there could be more than one error flag
+            int error = GLES20.glGetError();
+            if (error == GLES20.GL_NO_ERROR) break;
+            lastError = error;
+            if (op == null || op.length() == 0) {
+                Log.e(tag, String.format(Locale.US, "GL error 0x%04x", error));
+            } else {
+                Log.e(tag, String.format(Locale.US, "GL error: %s -> 0x%04x", op, error));
+            }
+        } while (true);
+        if (GL_ASSERTIONS_ENABLED && lastError != GLES20.GL_NO_ERROR) {
+            throw new IllegalStateException(String.format("glError: 0x%04x", lastError));
         }
     }
 
@@ -85,53 +98,4 @@ public class GLESTool {
         bPosition.position(0);
         return bPosition;
     }
-
-    public static String readRawTextFile(Context context, int rawId) {
-        InputStream is = context.getResources().openRawResource(rawId);
-        BufferedReader br = new BufferedReader(new InputStreamReader(is));
-        String line;
-        StringBuilder sb = new StringBuilder();
-        try {
-            while ((line = br.readLine()) != null) {
-                sb.append(line);
-                sb.append("\n");
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        try {
-            br.close();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        return sb.toString();
-    }
-
-    public static String readAssetTextFile(Context context, String file) {
-        try {
-            AssetManager assetManager = context.getAssets();
-            InputStream ims = assetManager.open(file);
-            String re = convertStreamToString(ims);
-            ims.close();
-            return re;
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-
-        return "";
-    }
-
-    public static String convertStreamToString(InputStream is) {
-        java.util.Scanner s = new java.util.Scanner(is).useDelimiter("\\A");
-        return s.hasNext() ? s.next() : "";
-    }
-
-
-    /**
-     * 判断是否为平板
-     */
-    public static boolean isTablet(Context context) {
-        return (context.getResources().getConfiguration().screenLayout & Configuration.SCREENLAYOUT_SIZE_MASK) >= Configuration.SCREENLAYOUT_SIZE_LARGE;
-    }
-
 }

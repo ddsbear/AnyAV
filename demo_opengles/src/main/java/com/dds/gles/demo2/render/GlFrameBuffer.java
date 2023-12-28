@@ -8,19 +8,19 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-package com.dds.gles.demo3.render;
+package com.dds.gles.demo2.render;
 
 import android.opengl.GLES20;
 
 
-public class GlTextureFrameBuffer {
+public class GlFrameBuffer {
     private final int pixelFormat;
     private int frameBufferId;
     private int textureId;
     private int width;
     private int height;
 
-    public GlTextureFrameBuffer(int pixelFormat) {
+    public GlFrameBuffer(int pixelFormat) {
         switch (pixelFormat) {
             case GLES20.GL_LUMINANCE:
             case GLES20.GL_RGB:
@@ -34,7 +34,7 @@ public class GlTextureFrameBuffer {
         this.height = 0;
     }
 
-    public void setSize(int width, int height) {
+    public void allocateBuffers(int width, int height) {
         if (width <= 0 || height <= 0) {
             throw new IllegalArgumentException("Invalid size: " + width + "x" + height);
         }

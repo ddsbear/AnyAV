@@ -1,12 +1,10 @@
 package com.dds.gles;
 
-import android.Manifest;
 import android.content.Intent;
 import android.os.Bundle;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
-import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
@@ -14,9 +12,8 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.dds.base.permission.PermissionUtils;
-import com.dds.base.permission.Permissions;
 import com.dds.gles.demo1.GLCameraActivity;
-import com.dds.gles.demo3.RenderSurfaceViewActivity;
+import com.dds.gles.demo2.RenderSurfaceViewActivity;
 
 import java.util.ArrayList;
 

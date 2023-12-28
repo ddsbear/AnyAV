@@ -8,8 +8,8 @@ import android.opengl.GLSurfaceView;
 import android.opengl.Matrix;
 
 import com.dds.gles.R;
-import com.dds.gles.demo1.camera.MyManager;
-import com.dds.gles.demo1.utils.OpenGLUtils;
+import com.dds.gles.demo1.camera.Camera2Manager;
+import com.dds.gles.utils.OpenGLUtils;
 import com.dds.gles.demo1.render.ProgramUtil;
 
 import java.nio.FloatBuffer;
@@ -19,7 +19,7 @@ import javax.microedition.khronos.opengles.GL10;
 
 public class CameraPreViewRenderer implements GLSurfaceView.Renderer {
     private static final String TAG = "CameraPreViewRenderer";
-    private MyManager manager;
+    private Camera2Manager manager;
     private SurfaceTexture surfaceTexture;
     private Context mContext;
 
@@ -59,7 +59,7 @@ public class CameraPreViewRenderer implements GLSurfaceView.Renderer {
 
     public CameraPreViewRenderer(Context context) {
         mContext = context;
-        manager = new MyManager(context);
+        manager = new Camera2Manager(context);
         manager.openCamera("0");
         surfaceTexture = manager.getSurfaceTexture();
 

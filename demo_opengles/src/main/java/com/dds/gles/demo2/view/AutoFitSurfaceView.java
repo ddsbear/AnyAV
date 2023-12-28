@@ -1,4 +1,4 @@
-package com.dds.gles.demo3.view;
+package com.dds.gles.demo2.view;
 
 import android.content.Context;
 import android.util.AttributeSet;
