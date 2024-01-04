@@ -249,7 +249,7 @@ public class RenderManager {
             mSurfaceFuture.complete(mSurfaceTexture);
 
             mFrameBuffer = new GlFrameBuffer(GLES20.GL_RGB);
-            mFrameBuffer.allocateBuffers(mWidth, mHeight);
+//            mFrameBuffer.allocateBuffers(mWidth, mHeight);
         }
 
         private void handleStartPreview(Surface surface) {

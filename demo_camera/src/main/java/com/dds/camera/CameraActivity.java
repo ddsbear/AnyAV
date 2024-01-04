@@ -5,18 +5,14 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
-import android.Manifest;
 import android.content.Intent;
-import android.os.Build;
 import android.os.Bundle;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.RelativeLayout;
-import android.widget.Toast;
 
 import com.dds.base.permission.PermissionUtils;
-import com.dds.base.permission.Permissions;
 import com.dds.camera.camera1.Camera1SurfaceViewActivity;
 import com.dds.camera.camera1.Camera1TextureViewActivity;
 import com.dds.camera.camera2.Camera2SurfaceViewActivity;
@@ -40,14 +36,13 @@ public class CameraActivity extends AppCompatActivity implements View.OnClickLis
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_camera);
-        recyclerView = (RecyclerView) findViewById(R.id.mList);
-        recyclerView.setLayoutManager(new LinearLayoutManager(this, LinearLayoutManager.VERTICAL, false));
-        initData();
-
+        initView();
         PermissionUtils.requestCameraPermission(this);
     }
 
-    private void initData() {
+    private void initView() {
+        recyclerView = (RecyclerView) findViewById(R.id.mList);
+        recyclerView.setLayoutManager(new LinearLayoutManager(this, LinearLayoutManager.VERTICAL, false));
         recyclerView.setAdapter(new MenuAdapter());
     }
 

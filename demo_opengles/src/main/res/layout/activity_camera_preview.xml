@@ -3,12 +3,15 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:background="@android:color/background_dark"
     tools:context=".demo1.GLCameraActivity">
 
     <android.opengl.GLSurfaceView
         android:id="@+id/gl_surface"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent" />
+        android:layout_width="1080px"
+        android:layout_height="1920px"
+        android:layout_gravity="center" />
+
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -16,6 +19,13 @@
         android:layout_marginBottom="60dp"
         android:gravity="center"
         android:orientation="horizontal">
+
+        <Button
+            android:id="@+id/btn_filter"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:onClick="onFilter"
+            android:text="Filter" />
 
         <Button
             android:id="@+id/btn_switch"

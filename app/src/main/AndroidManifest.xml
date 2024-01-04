@@ -34,8 +34,6 @@
             </intent-filter>
         </activity>
 
-        <activity android:name="com.dds.gles.demo2.camera.takepic.TakePictureActivity" />
-        <activity android:name="com.dds.gles.demo2.camera.preview.PreviewCameraActivity" />
     </application>
 
 </manifest>

@@ -71,39 +71,39 @@ public class ProgramUtil {
      * @return FloatBuffer
      */
     public static FloatBuffer createFloatBuffer(float[] s) {
-        ByteBuffer b = ByteBuffer.allocateDirect(s.length * 4);
-        b.order(ByteOrder.nativeOrder());
-        FloatBuffer bPosition = b.asFloatBuffer();
-        bPosition.put(s);
-        bPosition.position(0);
-        return bPosition;
+        ByteBuffer b = ByteBuffer.allocateDirect(s.length * 4).order(ByteOrder.nativeOrder());
+        FloatBuffer position = b.asFloatBuffer();
+        position.put(s);
+        position.position(0);
+        return position;
     }
 
     /**
      * 创建一个图片的2d纹理
+     *
      * @param bitmap bitmap
      * @return int
      */
     public static int createImage2DTexture(Bitmap bitmap) {
         int[] texture = new int[1];
-         if (bitmap != null && !bitmap.isRecycled()) {
+        if (bitmap != null && !bitmap.isRecycled()) {
             // 生成纹理
             GLES20.glGenTextures(1, texture, 0);
-             // 绑定纹理
+            // 绑定纹理
             GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, texture[0]);
 
-             //设置纹理采样方式
+            //设置纹理采样方式
             // 设置缩小过滤为使用纹理中坐标最接近的一个像素的颜色作为需要绘制的像素颜色
             GLES20.glTexParameterf(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_MIN_FILTER, GLES20.GL_LINEAR);
             // 设置放大过滤为使用纹理中坐标最接近的若干个颜色，通过加权平均算法得到需要绘制的像素颜色
             GLES20.glTexParameterf(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_MAG_FILTER, GLES20.GL_LINEAR);
 
-             // 设置环绕方向S，截取纹理坐标到[1/2n,1-1/2n]。将导致永远不会与border融合
-             // 设置纹理 S 轴（横轴）的拉伸方式为截取
+            // 设置环绕方向S，截取纹理坐标到[1/2n,1-1/2n]。将导致永远不会与border融合
+            // 设置纹理 S 轴（横轴）的拉伸方式为截取
             GLES20.glTexParameterf(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_WRAP_S, GLES20.GL_CLAMP_TO_EDGE);
-             // 设置环绕方向T，截取纹理坐标到[1/2n,1-1/2n]。将导致永远不会与border融合
-             // 设置纹理 T 轴（纵轴）的拉伸方式为截取
-             GLES20.glTexParameterf(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_WRAP_T, GLES20.GL_CLAMP_TO_EDGE);
+            // 设置环绕方向T，截取纹理坐标到[1/2n,1-1/2n]。将导致永远不会与border融合
+            // 设置纹理 T 轴（纵轴）的拉伸方式为截取
+            GLES20.glTexParameterf(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_WRAP_T, GLES20.GL_CLAMP_TO_EDGE);
 
             //根据以上指定的参数，生成一个2D纹理
             GLUtils.texImage2D(GLES20.GL_TEXTURE_2D, 0, bitmap, 0);
@@ -115,18 +115,21 @@ public class ProgramUtil {
 
     /**
      * 创建一个相机预览的OES纹理
+     *
      * @return int
      */
-    public static int createOESTexture() {
-        int[] textures = new int[1];
-        GLES30.glGenTextures(1, textures, 0);
+    public static void createOESTexture(int[] textures) {
+        // create Texture
+        GLES30.glGenTextures(textures.length, textures, 0);
+        // bind texture OES
         GLES30.glBindTexture(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, textures[0]);
+        // set Texture param
         GLES30.glTexParameterf(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, GLES30.GL_TEXTURE_MIN_FILTER, GLES30.GL_NEAREST);
         GLES30.glTexParameterf(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, GLES30.GL_TEXTURE_MAG_FILTER, GLES30.GL_NEAREST);
-        GLES30.glTexParameterf(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, GLES30.GL_TEXTURE_WRAP_S, GLES30.GL_REPEAT);
-        GLES30.glTexParameterf(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, GLES30.GL_TEXTURE_WRAP_T, GLES30.GL_REPEAT);
-        return textures[0];
+        GLES30.glTexParameterf(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, GLES30.GL_TEXTURE_WRAP_S, GLES30.GL_CLAMP_TO_EDGE);
+        GLES30.glTexParameterf(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, GLES30.GL_TEXTURE_WRAP_T, GLES30.GL_CLAMP_TO_EDGE);
     }
+
 
 
 }
