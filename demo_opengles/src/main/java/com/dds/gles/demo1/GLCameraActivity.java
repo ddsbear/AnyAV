@@ -3,10 +3,14 @@ package com.dds.gles.demo1;
 import android.content.pm.ActivityInfo;
 import android.opengl.GLSurfaceView;
 import android.os.Bundle;
+import android.util.Size;
+import android.view.Gravity;
 import android.view.View;
+import android.widget.FrameLayout;
 
 import androidx.appcompat.app.AppCompatActivity;
 
+import com.dds.base.camera.CameraUtils;
 import com.dds.base.utils.StatueBarUtils;
 import com.dds.gles.R;
 import com.dds.gles.demo1.camera.Camera2Manager;
@@ -17,6 +21,7 @@ public class GLCameraActivity extends AppCompatActivity {
     private static final String TAG = "GLCameraActivity";
     private GLSurfaceView surfaceView;
     private Camera2Manager camera2Manager;
+    private final Size mDesiredPreviewSize = new Size(1280, 720);
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -26,17 +31,29 @@ public class GLCameraActivity extends AppCompatActivity {
             setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LOCKED);
         }
         setContentView(R.layout.activity_camera_preview);
-
         surfaceView = findViewById(R.id.gl_surface);
+        updateView(surfaceView);
         // config version
         surfaceView.setEGLContextClientVersion(3);
-        // set render
-        CameraPreViewRenderer cameraPreViewRenderer = new CameraPreViewRenderer(surfaceView);
-        surfaceView.setRenderer(cameraPreViewRenderer);
-
         // open camera
-        camera2Manager = new Camera2Manager(this, cameraPreViewRenderer);
+        camera2Manager = new Camera2Manager(this, mDesiredPreviewSize);
+
+
         camera2Manager.openCamera();
+        // set render
+        surfaceView.setRenderer(camera2Manager.getCameraPreViewRenderer());
+
+
+
+    }
+
+
+    private void updateView(View surfaceView) {
+        Size layoutSize = CameraUtils.findBestLayoutSize(this, mDesiredPreviewSize);
+        FrameLayout.LayoutParams params = (FrameLayout.LayoutParams) surfaceView.getLayoutParams();
+        params.width = layoutSize.getWidth();
+        params.height = layoutSize.getHeight();
+        params.gravity = Gravity.CENTER;
     }
 
     @Override

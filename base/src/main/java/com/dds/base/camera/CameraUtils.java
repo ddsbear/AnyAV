@@ -116,7 +116,6 @@ public class CameraUtils {
         return new Size(displayWidth, displayHeight);
     }
 
-
     /**
      * Choose the most appropriate size
      * larger than or equal to the desired size

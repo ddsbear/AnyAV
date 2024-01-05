@@ -3,18 +3,23 @@ package com.dds.gles.demo1.camera;
 import android.content.Context;
 import android.graphics.SurfaceTexture;
 import android.hardware.camera2.CameraAccessException;
+import android.hardware.camera2.CameraCharacteristics;
+import android.hardware.camera2.CameraDevice;
+import android.hardware.camera2.CameraManager;
+import android.hardware.camera2.CameraMetadata;
+import android.hardware.camera2.params.StreamConfigurationMap;
 import android.os.Handler;
 import android.os.HandlerThread;
 import android.util.Log;
+import android.util.Size;
 
 import androidx.annotation.NonNull;
 
+import com.dds.base.camera.CameraUtils;
 import com.dds.gles.demo1.render.CameraPreViewRenderer;
 
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 
 public class Camera2Manager {
 
@@ -24,21 +29,35 @@ public class Camera2Manager {
     private HandlerThread mCameraThread;
     private CameraClient mClient;
     private final CameraOpenStateCallback stateCallback = new CameraOpenStateCallback();
-    private final CameraPreViewRenderer mCameraPreViewRenderer;
+    private CameraManager mCameraManager;
+    private Size mDesiredPreviewSize;
+    private Size mPreviewSize;
+    private CameraPreViewRenderer cameraPreViewRenderer;
 
-    public Camera2Manager(Context context, CameraPreViewRenderer cameraPreViewRenderer) {
-        this.mCameraPreViewRenderer = cameraPreViewRenderer;
+
+    public Camera2Manager(Context context, Size desiredPreviewSize) {
         mContext = context;
+        mDesiredPreviewSize = desiredPreviewSize;
+        mCameraManager = (CameraManager) context.getSystemService(Context.CAMERA_SERVICE);
+
         startCameraThread();
     }
 
     public void openCamera() {
-        mClient = new CameraClient(mContext, mCameraHandler, stateCallback);
-        String[] deviceNames = mClient.getDeviceNames(mContext);
-        boolean open = mClient.openCamera(deviceNames[0]);
-        if (!open) {
-            Log.e(TAG, "openCamera: no permission");
+        mClient = new CameraClient(mContext, mCameraManager, mCameraHandler, stateCallback);
+        String[] deviceNames = mClient.getDeviceNames();
+        String deviceName = deviceNames[0];
+        CameraCharacteristics cameraCharacteristics = getCameraCharacteristics(deviceName);
+        StreamConfigurationMap map = cameraCharacteristics.get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP);
+        if (map != null) {
+            mPreviewSize = CameraUtils.chooseOptimalSize(map.getOutputSizes(SurfaceTexture.class), mDesiredPreviewSize);
+            cameraPreViewRenderer = new CameraPreViewRenderer(mPreviewSize);
+            boolean open = mClient.openCamera(deviceName);
+            if (!open) {
+                Log.e(TAG, "openCamera: no permission");
+            }
         }
+
     }
 
     public void switchCamera() {
@@ -53,6 +72,14 @@ public class Camera2Manager {
             mClient.release();
         }
         stopCameraThread();
+    }
+
+    public Size getPreviewSize() {
+        return mPreviewSize;
+    }
+
+    public CameraPreViewRenderer getCameraPreViewRenderer() {
+        return cameraPreViewRenderer;
     }
 
     private void startCameraThread() {
@@ -77,13 +104,13 @@ public class Camera2Manager {
 
     }
 
-    private class CameraOpenStateCallback extends android.hardware.camera2.CameraDevice.StateCallback {
+    private class CameraOpenStateCallback extends CameraDevice.StateCallback {
 
         @Override
-        public void onOpened(@NonNull android.hardware.camera2.CameraDevice cameraDevice) {
+        public void onOpened(@NonNull CameraDevice cameraDevice) {
             Log.d(TAG, "onOpened: ");
             mClient.setDevice(cameraDevice);
-            CompletableFuture<SurfaceTexture> surfaceTextureCompletableFuture = mCameraPreViewRenderer.getCompletableFuture();
+            CompletableFuture<SurfaceTexture> surfaceTextureCompletableFuture = cameraPreViewRenderer.getCompletableFuture();
             SurfaceTexture surfaceTexture = null;
             try {
                 surfaceTexture = surfaceTextureCompletableFuture.get(5, TimeUnit.SECONDS);
@@ -99,19 +126,37 @@ public class Camera2Manager {
         }
 
         @Override
-        public void onDisconnected(@NonNull android.hardware.camera2.CameraDevice camera) {
+        public void onDisconnected(@NonNull CameraDevice camera) {
             Log.d(TAG, "onDisconnected: ");
 
         }
 
         @Override
-        public void onClosed(@NonNull android.hardware.camera2.CameraDevice camera) {
+        public void onClosed(@NonNull CameraDevice camera) {
             Log.d(TAG, "onClosed: ");
         }
 
         @Override
-        public void onError(@NonNull android.hardware.camera2.CameraDevice camera, int error) {
+        public void onError(@NonNull CameraDevice camera, int error) {
             Log.d(TAG, "onError: ");
+        }
+    }
+
+    public boolean isFrontFacing(String deviceName) {
+        CameraCharacteristics characteristics = getCameraCharacteristics(deviceName);
+        if (characteristics != null) {
+            Integer value = characteristics.get(CameraCharacteristics.LENS_FACING);
+            return value != null && value == CameraMetadata.LENS_FACING_FRONT;
+        }
+        return false;
+    }
+
+    private CameraCharacteristics getCameraCharacteristics(String deviceName) {
+        try {
+            return mCameraManager.getCameraCharacteristics(deviceName);
+        } catch (CameraAccessException | RuntimeException e) {
+            Log.e(TAG, "Camera access exception", e);
+            return null;
         }
     }
 

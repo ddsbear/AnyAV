@@ -35,11 +35,12 @@ public class CameraClient {
     private Context mContext;
 
 
-    public CameraClient(Context context, Handler handler, CameraDevice.StateCallback cameraStateCallback) {
+    public CameraClient(Context context, CameraManager cameraManager, Handler handler, CameraDevice.StateCallback cameraStateCallback) {
         mHandler = handler;
         mContext = context;
         configureStateCallBack = new ConfigureStateCallBack();
         this.cameraStateCallback = cameraStateCallback;
+        mCameraManager = cameraManager;
     }
 
     public boolean openCamera(String cameraName) {
@@ -49,7 +50,7 @@ public class CameraClient {
             try {
                 mCameraName = cameraName;
                 Log.d(TAG, "openCamera: " + mCameraName);
-                getCameraManager(mContext).openCamera(mCameraName, cameraStateCallback, mHandler);
+                mCameraManager.openCamera(mCameraName, cameraStateCallback, mHandler);
             } catch (CameraAccessException e) {
                 e.printStackTrace();
             }
@@ -58,8 +59,7 @@ public class CameraClient {
     }
 
     public void switchCamera() {
-
-        List<String> deviceNames = Arrays.asList(getDeviceNames(mContext));
+        List<String> deviceNames = Arrays.asList(getDeviceNames());
         if (deviceNames.size() < 2) {
             return;
         }
@@ -116,37 +116,14 @@ public class CameraClient {
         }
     }
 
-    private CameraManager getCameraManager(Context context) {
-        if (mCameraManager == null) {
-            mCameraManager = (CameraManager) context.getSystemService(Context.CAMERA_SERVICE);
-        }
-        return mCameraManager;
-    }
-
-    public boolean isFrontFacing(String deviceName) {
-        CameraCharacteristics characteristics = getCameraCharacteristics(deviceName);
-        if (characteristics != null) {
-            Integer value = characteristics.get(CameraCharacteristics.LENS_FACING);
-            return value != null && value == CameraMetadata.LENS_FACING_FRONT;
-        }
-        return false;
-    }
-
-    public String[] getDeviceNames(Context context) {
+    public String[] getDeviceNames() {
         try {
-            return getCameraManager(context).getCameraIdList();
+            return mCameraManager.getCameraIdList();
         } catch (CameraAccessException e) {
             Log.e(TAG, "Camera access exception", e);
             return new String[]{};
         }
     }
 
-    private CameraCharacteristics getCameraCharacteristics(String deviceName) {
-        try {
-            return getCameraManager(mContext).getCameraCharacteristics(deviceName);
-        } catch (CameraAccessException | RuntimeException e) {
-            Log.e(TAG, "Camera access exception", e);
-            return null;
-        }
-    }
+
 }

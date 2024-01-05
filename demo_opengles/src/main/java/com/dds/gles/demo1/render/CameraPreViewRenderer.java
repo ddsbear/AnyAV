@@ -5,6 +5,7 @@ import android.opengl.GLES11Ext;
 import android.opengl.GLES20;
 import android.opengl.GLSurfaceView;
 import android.util.Log;
+import android.util.Size;
 
 import com.dds.gles.demo2.render.GlFrameBuffer;
 
@@ -14,16 +15,14 @@ import java.util.concurrent.CompletableFuture;
 import javax.microedition.khronos.egl.EGLConfig;
 import javax.microedition.khronos.opengles.GL10;
 
-public class CameraPreViewRenderer implements GLSurfaceView.Renderer, SurfaceTexture.OnFrameAvailableListener {
+public class CameraPreViewRenderer implements GLSurfaceView.Renderer {
     private static final String TAG = "dds_CameraPreViewRenderer";
     private SurfaceTexture surfaceTexture;
-    private GLSurfaceView surfaceView;
     private CompletableFuture<SurfaceTexture> completableFuture;
 
 
     private static final boolean sUseFbo = true;
     private static final boolean sUseGlFrameBuffer = true;
-
 
     // 顶点坐标
     private static final float[] sPosition = {
@@ -80,15 +79,17 @@ public class CameraPreViewRenderer implements GLSurfaceView.Renderer, SurfaceTex
     private int mFrameBufferTextureId = -1;
     private int mFrameBufferId = -1;
 
+    private Size mBuferSize;
+
     public CompletableFuture<SurfaceTexture> getCompletableFuture() {
         return completableFuture;
     }
 
-    public CameraPreViewRenderer(GLSurfaceView surfaceView) {
-        this.surfaceView = surfaceView;
+    public CameraPreViewRenderer(Size mPreviewSize) {
         bPosition = ProgramUtil.createFloatBuffer(sPosition);
         bCoordinate = ProgramUtil.createFloatBuffer(sCoordinate);
         completableFuture = new CompletableFuture<>();
+        mBuferSize = mPreviewSize;
     }
 
     @Override
@@ -100,8 +101,6 @@ public class CameraPreViewRenderer implements GLSurfaceView.Renderer, SurfaceTex
         oesTextureId = textures[0];
         // bind SurfaceTexture
         surfaceTexture = new SurfaceTexture(oesTextureId);
-        surfaceTexture.setOnFrameAvailableListener(this);
-
         // loadRenderShaders
         program = ProgramUtil.createOpenGLProgram(VERTEX_SHADER_CAMERA, FRAGMENT_SHADER_CAMERA);
         if (sUseFbo) {
@@ -109,14 +108,14 @@ public class CameraPreViewRenderer implements GLSurfaceView.Renderer, SurfaceTex
         }
         if (sUseGlFrameBuffer) {
             frameBuffer = new GlFrameBuffer(GLES20.GL_RGBA);
-            frameBuffer.allocateBuffers(1920, 1080);
+            frameBuffer.allocateBuffers(mBuferSize.getWidth(), mBuferSize.getHeight());
 
             mFrameBufferTextureId = frameBuffer.getTextureId();
             mFrameBufferId = frameBuffer.getFrameBufferId();
         } else {
-            initTexture2D(textures, 1920, 1080);
+            initTexture2D(textures, mBuferSize.getWidth(), mBuferSize.getHeight());
             mFrameBufferTextureId = textures[0];
-            mFrameBufferId = createFrameBuffer(1920, 1080, mFrameBufferTextureId);
+            mFrameBufferId = createFrameBuffer(mBuferSize.getWidth(), mBuferSize.getHeight(), mFrameBufferTextureId);
         }
         completableFuture.complete(surfaceTexture);
 
@@ -166,7 +165,6 @@ public class CameraPreViewRenderer implements GLSurfaceView.Renderer, SurfaceTex
     public void onSurfaceChanged(GL10 gl, int width, int height) {
         Log.d(TAG, "onSurfaceChanged: width = " + width + ",height = " + height);
         GLES20.glViewport(0, 0, width, height);
-
     }
 
     @Override
@@ -225,7 +223,6 @@ public class CameraPreViewRenderer implements GLSurfaceView.Renderer, SurfaceTex
         GLES20.glFinish();
 
         if (sUseFbo) {
-            GLES20.glViewport(0, 0, 1080, 1920);
             GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, 0);
 
             GLES20.glActiveTexture(GLES20.GL_TEXTURE0);
@@ -245,8 +242,4 @@ public class CameraPreViewRenderer implements GLSurfaceView.Renderer, SurfaceTex
 
     }
 
-    @Override
-    public void onFrameAvailable(SurfaceTexture surfaceTexture) {
-        surfaceView.requestRender();
-    }
 }
