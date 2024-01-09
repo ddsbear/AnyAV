@@ -46,7 +46,7 @@ public class Camera2Manager {
     public void openCamera() {
         mClient = new CameraClient(mContext, mCameraManager, mCameraHandler, stateCallback);
         String[] deviceNames = mClient.getDeviceNames();
-        String deviceName = deviceNames[0];
+        String deviceName = deviceNames[1];
         CameraCharacteristics cameraCharacteristics = getCameraCharacteristics(deviceName);
         StreamConfigurationMap map = cameraCharacteristics.get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP);
         if (map != null) {

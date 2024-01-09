@@ -17,6 +17,8 @@ import android.view.Surface;
 
 import androidx.annotation.NonNull;
 
+import com.dds.gles.demo2.render.filter.GreyFilter;
+
 import java.util.concurrent.CompletableFuture;
 
 public class RenderManager {
@@ -119,6 +121,10 @@ public class RenderManager {
         public volatile SurfaceTexture mSurfaceTexture;
         private final CompletableFuture<SurfaceTexture> mSurfaceFuture;
         private GlTextureRenderer mGlTextureRenderer;
+        private GlTextureRenderer mRGBTextureRenderer;
+
+        private int mBufferWidth;
+        private int mBufferHeight;
 
         private int mWidth;
         private int mHeight;
@@ -126,6 +132,8 @@ public class RenderManager {
         private EGLSurface previewEglSurface;
 
         private boolean isFilterEnable;
+        private GreyFilter filter;
+
 
         public GLHandler(Looper looper) {
             super(looper);
@@ -158,7 +166,7 @@ public class RenderManager {
                     handleSetResolution(msg.arg1, msg.arg2);
                     break;
                 case MSG_FILTER:
-                    handleFilter(msg.arg1);
+                    handleEnableFilter(msg.arg1);
                     break;
                 default:
                     break;
@@ -238,18 +246,23 @@ public class RenderManager {
         }
 
         private void handleSetup(int width, int height) {
-            mWidth = width;
-            mHeight = height;
+            mBufferWidth = width;
+            mBufferHeight = height;
             // bindTexture
             mTextureID = GLESTool.createOESTexture();
             Log.d(TAG, "handleSetup: createOESTexture width = " + width + ",height = " + height);
             mSurfaceTexture = new SurfaceTexture(mTextureID);
             Log.d(TAG, "handleSetup: mSurfaceTexture = " + mSurfaceTexture);
             mGlTextureRenderer = new GlTextureRenderer();
-            mSurfaceFuture.complete(mSurfaceTexture);
+            mRGBTextureRenderer = new GlTextureRenderer();
 
-            mFrameBuffer = new GlFrameBuffer(GLES20.GL_RGB);
-//            mFrameBuffer.allocateBuffers(mWidth, mHeight);
+
+            mFrameBuffer = new GlFrameBuffer(GLES20.GL_RGBA);
+            mFrameBuffer.allocateBuffers(mBufferWidth, mBufferHeight);
+
+            filter = new GreyFilter();
+
+            mSurfaceFuture.complete(mSurfaceTexture);
         }
 
         private void handleStartPreview(Surface surface) {
@@ -269,33 +282,32 @@ public class RenderManager {
         }
 
         private void handleDrawFrame() {
-            mSurfaceTexture.updateTexImage();
-            if (isFilterEnable) {
-
-                GLES20.glViewport(0, 0, mFrameBuffer.getWidth(), mFrameBuffer.getHeight());
-
-                // eglMakeCurrent
-                EGL14.eglMakeCurrent(mEGLDisplay, previewEglSurface, previewEglSurface, mEGLContext);
-                // draw
-                float[] mSTMatrix = new float[16];
-                mSurfaceTexture.getTransformMatrix(mSTMatrix);
-                mGlTextureRenderer.prepareShader(GlTextureRenderer.ShaderType.RGB);
-                mGlTextureRenderer.drawTexture(mFrameBuffer.getTextureId(), mSTMatrix, 0, 0, mWidth, mHeight);
-                // eglSwapBuffers
-                EGL14.eglSwapBuffers(mEGLDisplay, previewEglSurface);
-
-            } else {
-                // eglMakeCurrent
-                EGL14.eglMakeCurrent(mEGLDisplay, previewEglSurface, previewEglSurface, mEGLContext);
-                // draw
-                float[] mSTMatrix = new float[16];
-                mSurfaceTexture.getTransformMatrix(mSTMatrix);
-                mGlTextureRenderer.prepareShader(GlTextureRenderer.ShaderType.OES);
-                mGlTextureRenderer.drawTexture(mTextureID, mSTMatrix, 0, 0, mWidth, mHeight);
-                // eglSwapBuffers
-                EGL14.eglSwapBuffers(mEGLDisplay, previewEglSurface);
+            if (mHeight == 0 || mWidth == 0) {
+                return;
             }
+            mSurfaceTexture.updateTexImage();
+            // eglMakeCurrent
+            EGL14.eglMakeCurrent(mEGLDisplay, previewEglSurface, previewEglSurface, mEGLContext);
 
+            if(isFilterEnable){
+                mFrameBuffer.bind();
+            }
+            // draw
+            float[] mSTMatrix = new float[16];
+            mSurfaceTexture.getTransformMatrix(mSTMatrix);
+            mGlTextureRenderer.prepareShader(GlTextureRenderer.ShaderType.OES);
+            mGlTextureRenderer.drawOesTexture(mTextureID, mSTMatrix, 0, 0, mWidth, mHeight);
+
+            if (isFilterEnable) {
+                mRGBTextureRenderer.prepareShader(GlTextureRenderer.ShaderType.RGB);
+                mRGBTextureRenderer.drawRgbTexture(mFrameBuffer.getTextureId(), mSTMatrix, 0, 0, mWidth, mHeight);
+
+                filter.prepare();
+                filter.draw(mSTMatrix);
+                mFrameBuffer.unbind();
+            }
+            // eglSwapBuffers
+            EGL14.eglSwapBuffers(mEGLDisplay, previewEglSurface);
 
         }
 
@@ -315,6 +327,9 @@ public class RenderManager {
                 }
                 if (mGlTextureRenderer != null) {
                     mGlTextureRenderer.release();
+                }
+                if (mRGBTextureRenderer != null) {
+                    mRGBTextureRenderer.release();
                 }
                 EGL14.eglMakeCurrent(mEGLDisplay, EGL14.EGL_NO_SURFACE, EGL14.EGL_NO_SURFACE,
                         EGL14.EGL_NO_CONTEXT);
@@ -338,7 +353,7 @@ public class RenderManager {
             }
         }
 
-        private void handleFilter(int arg1) {
+        private void handleEnableFilter(int arg1) {
             if (arg1 == 1) {
                 isFilterEnable = true;
             } else {

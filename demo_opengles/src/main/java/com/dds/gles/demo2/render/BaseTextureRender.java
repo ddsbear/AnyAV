@@ -43,14 +43,13 @@ public class BaseTextureRender {
     };
 
 
-    protected static final String VERTEX_SHADER_DEFAULT =
+    public static final String VERTEX_SHADER_DEFAULT =
             "attribute vec4 in_pos;\n" +
                     "attribute vec4 in_tc;\n" +
                     "varying vec2 tc;\n" +
-                    "uniform mat4 uMVPMatrix;\n" +
                     "uniform mat4 tex_mat;\n" +
                     "void main() {\n" +
-                    "  gl_Position = uMVPMatrix * in_pos;\n" +
+                    "  gl_Position = in_pos;\n" +
                     "  tc = (tex_mat * in_tc).xy;\n" +
                     "}\n";
 
@@ -66,10 +65,10 @@ public class BaseTextureRender {
     protected static final String FRAGMENT_SHADER_RGB =
             "#extension GL_OES_EGL_image_external : require\n" +
                     "precision mediump float;\n" +
-                    "uniform sampler2D tex;\n" +
+                    "uniform sampler2D sTexture;\n" +
                     "varying vec2 tc;\n" +
                     "void main() {\n" +
-                    "  gl_FragColor = texture2D(tex, tc);\n" +
+                    "  gl_FragColor = texture2D(sTexture, tc);\n" +
                     "}\n";
 
 

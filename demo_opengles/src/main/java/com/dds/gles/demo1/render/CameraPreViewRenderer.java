@@ -3,11 +3,12 @@ package com.dds.gles.demo1.render;
 import android.graphics.SurfaceTexture;
 import android.opengl.GLES11Ext;
 import android.opengl.GLES20;
+import android.opengl.GLES31;
 import android.opengl.GLSurfaceView;
+import android.opengl.Matrix;
 import android.util.Log;
 import android.util.Size;
 
-import com.dds.gles.demo2.render.GlFrameBuffer;
 
 import java.nio.FloatBuffer;
 import java.util.concurrent.CompletableFuture;
@@ -22,7 +23,7 @@ public class CameraPreViewRenderer implements GLSurfaceView.Renderer {
 
 
     private static final boolean sUseFbo = true;
-    private static final boolean sUseGlFrameBuffer = true;
+    private static final boolean sUseFilter = true;
 
     // 顶点坐标
     private static final float[] sPosition = {
@@ -65,21 +66,32 @@ public class CameraPreViewRenderer implements GLSurfaceView.Renderer {
             "    gl_FragColor = texture2D(vTexture,tc);\n" +
             "}";
 
+    private static final String FRAGMENT_SHADER_BEAUTY = "precision mediump float;\n"
+            + "varying vec2 tc;\n"
+            + "uniform sampler2D vTexture;\n"
+            + "void main(){\n"
+            + "  vec4 mask = texture2D(vTexture, tc);\n"
+            + "  gl_FragColor = vec4(mask.g,mask.g,mask.g,1.0);\n"
+            + "}";
+
+
     private final float[] mMVPMatrix = new float[16];
 
     int program;
     int program1;
+    int program2;
     FloatBuffer bPosition;
     FloatBuffer bCoordinate;
 
     // oes
-    protected int oesTextureId;
+    int oesTextureId;
     // fbo
-    private GlFrameBuffer frameBuffer;
-    private int mFrameBufferTextureId = -1;
-    private int mFrameBufferId = -1;
-
-    private Size mBuferSize;
+    FrameBuffer frameBuffer;
+    int mFrameBufferTextureId = -1;
+    int mFrameBufferId = -1;
+    Size mBuferSize;
+    int mWidth;
+    int mHeight;
 
     public CompletableFuture<SurfaceTexture> getCompletableFuture() {
         return completableFuture;
@@ -105,66 +117,26 @@ public class CameraPreViewRenderer implements GLSurfaceView.Renderer {
         program = ProgramUtil.createOpenGLProgram(VERTEX_SHADER_CAMERA, FRAGMENT_SHADER_CAMERA);
         if (sUseFbo) {
             program1 = ProgramUtil.createOpenGLProgram(VERTEX_SHADER_CAMERA, FRAGMENT_SHADER_FBO);
+            if (sUseFilter) {
+                program2 = ProgramUtil.createOpenGLProgram(VERTEX_SHADER_CAMERA, FRAGMENT_SHADER_BEAUTY);
+            }
         }
-        if (sUseGlFrameBuffer) {
-            frameBuffer = new GlFrameBuffer(GLES20.GL_RGBA);
-            frameBuffer.allocateBuffers(mBuferSize.getWidth(), mBuferSize.getHeight());
+        frameBuffer = new FrameBuffer(GLES20.GL_RGBA);
+        frameBuffer.allocateBuffers(mBuferSize.getWidth(), mBuferSize.getHeight());
 
-            mFrameBufferTextureId = frameBuffer.getTextureId();
-            mFrameBufferId = frameBuffer.getFrameBufferId();
-        } else {
-            initTexture2D(textures, mBuferSize.getWidth(), mBuferSize.getHeight());
-            mFrameBufferTextureId = textures[0];
-            mFrameBufferId = createFrameBuffer(mBuferSize.getWidth(), mBuferSize.getHeight(), mFrameBufferTextureId);
-        }
+        mFrameBufferTextureId = frameBuffer.getTextureId();
+        mFrameBufferId = frameBuffer.getFrameBufferId();
         completableFuture.complete(surfaceTexture);
 
 
-    }
-
-    private void initTexture2D(int[] textures, int width, int height) {
-        GLES20.glGenTextures(1, textures, 0);
-        GLES20.glBindTexture(GL10.GL_TEXTURE_2D, textures[0]);
-
-        GLES20.glTexParameteri(GL10.GL_TEXTURE_2D, GL10.GL_TEXTURE_MIN_FILTER, GL10.GL_NEAREST);
-        GLES20.glTexParameteri(GL10.GL_TEXTURE_2D, GL10.GL_TEXTURE_MAG_FILTER, GL10.GL_LINEAR);
-        GLES20.glTexParameteri(GL10.GL_TEXTURE_2D, GL10.GL_TEXTURE_WRAP_S, GL10.GL_REPEAT);
-        GLES20.glTexParameteri(GL10.GL_TEXTURE_2D, GL10.GL_TEXTURE_WRAP_T, GL10.GL_REPEAT);
-
-        GLES20.glTexImage2D(GLES20.GL_TEXTURE_2D, 0, GLES20.GL_RGBA, width, height,
-                0, GLES20.GL_RGBA, GLES20.GL_UNSIGNED_BYTE, null);
-    }
-
-    private int createFrameBuffer(int width, int height, int targetTextureId) {
-        int framebuffer;
-        int[] frameBuffers = new int[1];
-        GLES20.glGenFramebuffers(1, frameBuffers, 0);
-        framebuffer = frameBuffers[0];
-        GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, framebuffer);
-
-        int depthBuffer;
-        int[] renderBuffers = new int[1];
-        GLES20.glGenRenderbuffers(1, renderBuffers, 0);
-        depthBuffer = renderBuffers[0];
-
-        GLES20.glBindRenderbuffer(GLES20.GL_RENDERBUFFER, depthBuffer);
-        GLES20.glRenderbufferStorage(GLES20.GL_RENDERBUFFER, GLES20.GL_DEPTH_COMPONENT16, width, height);
-        GLES20.glFramebufferRenderbuffer(GLES20.GL_FRAMEBUFFER, GLES20.GL_DEPTH_ATTACHMENT, GLES20.GL_RENDERBUFFER, depthBuffer);
-
-        GLES20.glFramebufferTexture2D(GLES20.GL_FRAMEBUFFER, GLES20.GL_COLOR_ATTACHMENT0, GLES20.GL_TEXTURE_2D, targetTextureId, 0);
-        int status = GLES20.glCheckFramebufferStatus(GLES20.GL_FRAMEBUFFER);
-        if (status != GLES20.GL_FRAMEBUFFER_COMPLETE) {
-            throw new RuntimeException("Framebuffer is not complete: " +
-                    Integer.toHexString(status));
-        }
-        GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, 0);
-        return framebuffer;
     }
 
     @Override
     public void onSurfaceChanged(GL10 gl, int width, int height) {
         Log.d(TAG, "onSurfaceChanged: width = " + width + ",height = " + height);
         GLES20.glViewport(0, 0, width, height);
+        mWidth = width;
+        mHeight = height;
     }
 
     @Override
@@ -186,11 +158,11 @@ public class CameraPreViewRenderer implements GLSurfaceView.Renderer {
         GLES20.glClearColor(0, 0, 0, 0);
         GLES20.glClear(GLES20.GL_DEPTH_BUFFER_BIT | GLES20.GL_COLOR_BUFFER_BIT);
 
-
         // use program
         GLES20.glUseProgram(program);
 
         if (sUseFbo) {
+            GLES20.glViewport(0, 0, mBuferSize.getWidth(), mBuferSize.getHeight());
             GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, mFrameBufferId);
         }
 
@@ -223,19 +195,32 @@ public class CameraPreViewRenderer implements GLSurfaceView.Renderer {
         GLES20.glFinish();
 
         if (sUseFbo) {
+
+            GLES20.glViewport(0, 0, mWidth, mHeight);
+            GLES20.glUseProgram(program1);
             GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, 0);
+
+            Matrix.translateM(mMVPMatrix, 0, 0f, 1f, 0);
+            Matrix.rotateM(mMVPMatrix, 0, 90, 0, 0, 1);
+
 
             GLES20.glActiveTexture(GLES20.GL_TEXTURE0);
             GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, mFrameBufferTextureId);
 
-            GLES20.glUniformMatrix4fv(
-                    GLES20.glGetUniformLocation(program1, "vMatrix"),
-                    1, false, mMVPMatrix, 0);
+            GLES20.glUniformMatrix4fv(GLES20.glGetUniformLocation(program1, "vMatrix"), 1, false, mMVPMatrix, 0);
 
             GLES20.glUniform1i(GLES20.glGetUniformLocation(program1, "vTexture"), 0);
             GLES20.glDrawArrays(GLES20.GL_TRIANGLE_STRIP, 0, sCoordinate.length / 2);
-        }
 
+            if (sUseFilter) {
+                GLES20.glUseProgram(program2);
+
+                GLES20.glUniformMatrix4fv(GLES20.glGetUniformLocation(program2, "vMatrix"), 1, false, mMVPMatrix, 0);
+
+                GLES20.glUniform1i(GLES20.glGetUniformLocation(program2, "vTexture"), 0);
+                GLES20.glDrawArrays(GLES20.GL_TRIANGLE_STRIP, 0, sCoordinate.length / 2);
+            }
+        }
 
         GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, 0);
         GLES20.glUseProgram(0);

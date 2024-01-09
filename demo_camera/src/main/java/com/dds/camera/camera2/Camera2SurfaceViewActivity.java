@@ -55,7 +55,6 @@ public class Camera2SurfaceViewActivity extends AppCompatActivity implements Sur
     private AutoFitSurfaceView mSurfaceView;
     private Button btnSwitch;
     private Button btnPicture;
-    private Button btnSnapshot;
 
     private Surface mPreviewSurface;
     private final Size mDesiredPreviewSize = new Size(1920, 1080);
@@ -117,15 +116,13 @@ public class Camera2SurfaceViewActivity extends AppCompatActivity implements Sur
         mSurfaceView = findViewById(R.id.preview_surface);
         btnSwitch = findViewById(R.id.btn_switch);
         btnPicture = findViewById(R.id.btn_take_picture);
-        btnSnapshot = findViewById(R.id.btn_take_snap);
-        mSurfaceView.getHolder().addCallback(this);
+         mSurfaceView.getHolder().addCallback(this);
     }
 
     private void initListener() {
         btnSwitch.setOnClickListener(v -> switchCamera());
         btnPicture.setOnClickListener(v -> takePicture());
-        btnSnapshot.setOnClickListener(v -> snapshot());
-    }
+     }
 
     private void initCameraManager() {
         manager = (CameraManager) getSystemService(Context.CAMERA_SERVICE);
@@ -197,10 +194,6 @@ public class Camera2SurfaceViewActivity extends AppCompatActivity implements Sur
         } catch (CameraAccessException e) {
             Log.e(TAG, "switchCamera: " + e);
         }
-    }
-
-    private void snapshot() {
-        // nop
     }
 
     private void initCameraConfig(String cameraId) throws CameraAccessException {

@@ -51,9 +51,6 @@ public class RenderSurfaceViewActivity extends AppCompatActivity implements Surf
     private final Size mDesiredPreviewSize = new Size(1280, 720);
     private Size mPreviewSize;
 
-    private int mPreviewSurfaceWidth;
-    private int mPreviewSurfaceHeight;
-
     private final Semaphore mCameraOpenCloseLock = new Semaphore(1);
 
     /**
@@ -370,17 +367,12 @@ public class RenderSurfaceViewActivity extends AppCompatActivity implements Surf
         mPreviewSurface = holder.getSurface();
         setUpOutputSurfaces();
         openCamera();
-
     }
 
     @Override
     public void surfaceChanged(@NonNull SurfaceHolder holder, int format, int width, int height) {
         Log.d(TAG, "surfaceChanged: size = " + width + "x" + height + ", fmt = " + format);
-        mPreviewSurfaceWidth = width;
-        mPreviewSurfaceHeight = height;
-        mRenderManager.setResolution(mPreviewSurfaceWidth, mPreviewSurfaceHeight);
-
-
+        mRenderManager.setResolution(width, height);
     }
 
     @Override

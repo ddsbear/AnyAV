@@ -21,7 +21,7 @@ public class GLCameraActivity extends AppCompatActivity {
     private static final String TAG = "GLCameraActivity";
     private GLSurfaceView surfaceView;
     private Camera2Manager camera2Manager;
-    private final Size mDesiredPreviewSize = new Size(1280, 720);
+    private final Size mDesiredPreviewSize = new Size(1920, 1080);
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {

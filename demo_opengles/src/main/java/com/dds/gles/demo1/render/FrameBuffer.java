@@ -8,19 +8,21 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-package com.dds.gles.demo2.render;
+package com.dds.gles.demo1.render;
 
 import android.opengl.GLES20;
 
+import com.dds.gles.demo2.render.GLESTool;
 
-public class GlFrameBuffer {
+
+public class FrameBuffer {
     private final int pixelFormat;
     private int frameBufferId;
     private int textureId;
     private int width;
     private int height;
 
-    public GlFrameBuffer(int pixelFormat) {
+    public FrameBuffer(int pixelFormat) {
         switch (pixelFormat) {
             case GLES20.GL_LUMINANCE:
             case GLES20.GL_RGB:
@@ -116,13 +118,4 @@ public class GlFrameBuffer {
         width = 0;
         height = 0;
     }
-
-    public void bind() {
-        GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, frameBufferId);
-    }
-
-    public void unbind() {
-        GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, 0);
-    }
-
 }
