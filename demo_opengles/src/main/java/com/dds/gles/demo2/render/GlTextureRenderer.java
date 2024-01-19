@@ -103,8 +103,8 @@ public class GlTextureRenderer extends BaseTextureRender {
 
         GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, 0);
 
-        Matrix.translateM(mTexMatrix, 0, 0f, 1f, 0);
-        Matrix.rotateM(mTexMatrix, 0, 90, 0, 0, 1);
+
+        Matrix.setIdentityM(mTexMatrix,0);
 
         // bindTexture
         GLES20.glActiveTexture(GLES20.GL_TEXTURE0);

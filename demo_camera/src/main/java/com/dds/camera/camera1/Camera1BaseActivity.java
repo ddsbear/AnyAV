@@ -5,10 +5,12 @@ import android.os.Bundle;
 import android.util.Log;
 import android.util.Size;
 import android.widget.Button;
+import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.dds.base.utils.StatueBarUtils;
+import com.dds.base.utils.Toasts;
 
 public class Camera1BaseActivity extends AppCompatActivity {
     private static final String TAG = "Camera1BaseActivity";
@@ -66,6 +68,7 @@ public class Camera1BaseActivity extends AppCompatActivity {
 
     protected void switchCamera() {
         cameraPresenter.switchCamera();
+        Toast.makeText(this,"Turned on timer sec). Photos will be transferred to this device.", Toast.LENGTH_SHORT).show();
     }
 
 }

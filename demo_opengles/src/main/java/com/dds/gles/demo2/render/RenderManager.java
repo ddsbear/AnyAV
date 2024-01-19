@@ -289,9 +289,7 @@ public class RenderManager {
             // eglMakeCurrent
             EGL14.eglMakeCurrent(mEGLDisplay, previewEglSurface, previewEglSurface, mEGLContext);
 
-            if(isFilterEnable){
-                mFrameBuffer.bind();
-            }
+            mFrameBuffer.bind();
             // draw
             float[] mSTMatrix = new float[16];
             mSurfaceTexture.getTransformMatrix(mSTMatrix);
@@ -299,13 +297,14 @@ public class RenderManager {
             mGlTextureRenderer.drawOesTexture(mTextureID, mSTMatrix, 0, 0, mWidth, mHeight);
 
             if (isFilterEnable) {
-                mRGBTextureRenderer.prepareShader(GlTextureRenderer.ShaderType.RGB);
-                mRGBTextureRenderer.drawRgbTexture(mFrameBuffer.getTextureId(), mSTMatrix, 0, 0, mWidth, mHeight);
-
                 filter.prepare();
                 filter.draw(mSTMatrix);
-                mFrameBuffer.unbind();
             }
+            mFrameBuffer.unbind();
+
+            mRGBTextureRenderer.prepareShader(GlTextureRenderer.ShaderType.RGB);
+            mRGBTextureRenderer.drawRgbTexture(mFrameBuffer.getTextureId(), mSTMatrix, 0, 0, mWidth, mHeight);
+
             // eglSwapBuffers
             EGL14.eglSwapBuffers(mEGLDisplay, previewEglSurface);
 
@@ -322,6 +321,9 @@ public class RenderManager {
 
         private void releaseEGLContext() {
             if (mEGLDisplay != EGL14.EGL_NO_DISPLAY) {
+                if (filter != null) {
+                    filter.release();
+                }
                 if (mFrameBuffer != null) {
                     mFrameBuffer.release();
                 }
