@@ -88,7 +88,7 @@ public class Camera2SurfaceViewActivity extends AppCompatActivity implements Sur
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         StatueBarUtils.setStatusBarOrScreenStatus(this);
-        setContentView(R.layout.activity_surface_view_camera2);
+        setContentView(R.layout.activity_camera2_surface_view);
         initView();
         initListener();
         initCameraManager();

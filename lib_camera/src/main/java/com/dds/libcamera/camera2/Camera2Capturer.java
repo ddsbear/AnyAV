@@ -1,10 +1,10 @@
-package com.dds.gles.camera.camera2;
+package com.dds.libcamera.camera2;
 
 import android.content.Context;
 import android.hardware.camera2.CameraManager;
 
-import com.dds.gles.camera.CameraCapturer;
-import com.dds.gles.camera.CameraEnumerator;
+import com.dds.libcamera.CameraCapturer;
+import com.dds.libcamera.CameraEnumerator;
 
 public class Camera2Capturer extends CameraCapturer {
 

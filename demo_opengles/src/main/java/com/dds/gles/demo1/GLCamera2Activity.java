@@ -14,10 +14,9 @@ import com.dds.base.camera.CameraUtils;
 import com.dds.base.utils.StatueBarUtils;
 import com.dds.gles.R;
 import com.dds.gles.demo1.camera.Camera2Manager;
-import com.dds.gles.demo1.render.CameraPreViewRenderer;
 import com.dds.gles.demo2.Utils;
 
-public class GLCameraActivity extends AppCompatActivity {
+public class GLCamera2Activity extends AppCompatActivity {
     private static final String TAG = "GLCameraActivity";
     private GLSurfaceView surfaceView;
     private Camera2Manager camera2Manager;
@@ -30,7 +29,7 @@ public class GLCameraActivity extends AppCompatActivity {
         if (!Utils.isTablet(this)) {
             setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LOCKED);
         }
-        setContentView(R.layout.activity_camera_preview);
+        setContentView(R.layout.activity_gl_camera2);
         surfaceView = findViewById(R.id.gl_surface);
         updateView(surfaceView);
         // config version

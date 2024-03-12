@@ -1,4 +1,4 @@
-package com.dds.gles.camera;
+package com.dds.libcamera;
 
 public interface CameraVideoCapturer extends VideoCapturer {
 

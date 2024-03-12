@@ -4,7 +4,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@android:color/black"
-    tools:context=".demo2.RenderSurfaceViewActivity">
+    tools:context=".demo2.GLCamera2SurfaceViewActivity">
 
     <com.dds.gles.demo2.view.AutoFitSurfaceView
         android:id="@+id/surface_container"

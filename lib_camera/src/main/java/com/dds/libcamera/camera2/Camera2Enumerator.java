@@ -1,4 +1,4 @@
-package com.dds.gles.camera.camera2;
+package com.dds.libcamera.camera2;
 
 import android.content.Context;
 import android.hardware.camera2.CameraAccessException;
@@ -7,9 +7,7 @@ import android.hardware.camera2.CameraManager;
 import android.hardware.camera2.CameraMetadata;
 import android.util.Log;
 
-import androidx.annotation.Nullable;
-
-import com.dds.gles.camera.CameraEnumerator;
+import com.dds.libcamera.CameraEnumerator;
 
 public class Camera2Enumerator implements CameraEnumerator {
     private static final String TAG = "Camera2Enumerator";

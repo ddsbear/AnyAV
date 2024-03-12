@@ -1,6 +1,6 @@
-package com.dds.gles.camera.camera2;
+package com.dds.libcamera.camera2;
 
-import com.dds.gles.camera.CameraSession;
+import com.dds.libcamera.CameraSession;
 
 public class Camera2Session implements CameraSession {
     @Override

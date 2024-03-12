@@ -25,14 +25,14 @@
 
     <application>
         <activity
-            android:name=".OpenGLActivity"
+            android:name=".OpenGLListActivity"
             android:exported="false">
             <meta-data
                 android:name="android.app.lib_name"
                 android:value="" />
         </activity>
-        <activity android:name=".demo1.GLCameraActivity" />
-        <activity android:name="com.dds.gles.demo2.RenderSurfaceViewActivity" />
+        <activity android:name=".demo1.GLCamera2Activity" />
+        <activity android:name="com.dds.gles.demo2.GLCamera2SurfaceViewActivity" />
     </application>
 
 </manifest>

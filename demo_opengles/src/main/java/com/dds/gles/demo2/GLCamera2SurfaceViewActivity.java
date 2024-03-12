@@ -33,7 +33,6 @@ import androidx.core.app.ActivityCompat;
 import com.dds.base.camera.CameraUtils;
 import com.dds.base.utils.StatueBarUtils;
 import com.dds.gles.R;
-import com.dds.gles.demo2.render.GLESTool;
 import com.dds.gles.demo2.render.RenderManager;
 import com.dds.gles.demo2.view.AutoFitSurfaceView;
 
@@ -43,7 +42,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 
-public class RenderSurfaceViewActivity extends AppCompatActivity implements SurfaceHolder.Callback, SurfaceTexture.OnFrameAvailableListener {
+public class GLCamera2SurfaceViewActivity extends AppCompatActivity implements SurfaceHolder.Callback, SurfaceTexture.OnFrameAvailableListener {
     private static final String TAG = "RenderActivity";
     private AutoFitSurfaceView mSurfaceView;
     private Surface mPreviewSurface;
@@ -80,9 +79,9 @@ public class RenderSurfaceViewActivity extends AppCompatActivity implements Surf
         super.onCreate(savedInstanceState);
         StatueBarUtils.setStatusBarOrScreenStatus(this);
         if (!Utils.isTablet(this)) {
-            setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
+            setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED);
         }
-        setContentView(R.layout.activity_render);
+        setContentView(R.layout.activity_gl_camera2_surface_view);
         Log.d(TAG, "onCreate: ");
         initView();
         initListener();
@@ -220,7 +219,7 @@ public class RenderSurfaceViewActivity extends AppCompatActivity implements Surf
             if (!mCameraOpenCloseLock.tryAcquire(2500, TimeUnit.MILLISECONDS)) {
                 throw new RuntimeException("Time out waiting to lock camera opening.");
             }
-            if (ActivityCompat.checkSelfPermission(RenderSurfaceViewActivity.this, Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
+            if (ActivityCompat.checkSelfPermission(GLCamera2SurfaceViewActivity.this, Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
                 return;
             }
             manager.openCamera(mCameraId, mStateCallback, mBackgroundHandler);
@@ -320,7 +319,7 @@ public class RenderSurfaceViewActivity extends AppCompatActivity implements Surf
                     } catch (CameraAccessException e) {
                         throw new RuntimeException(e);
                     }
-                    if (Utils.isTablet(RenderSurfaceViewActivity.this) && orientationLiveData.getValue() != null) {
+                    if (Utils.isTablet(GLCamera2SurfaceViewActivity.this) && orientationLiveData.getValue() != null) {
                         mRenderManager.setRotation(orientationLiveData.getValue());
                     }
                 }

@@ -1,7 +1,8 @@
-package com.dds.gles.camera;
+package com.dds.libcamera;
 
 
 public interface VideoCapturer {
+
     void initialize();
 
     void startCapture(int width, int height, int frameRate);
