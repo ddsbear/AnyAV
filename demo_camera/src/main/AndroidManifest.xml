@@ -12,15 +12,18 @@
 
     <application>
         <activity
-            android:name="com.dds.camera.camera1.Camera1TextureViewActivity"
+            android:name="com.dds.camera.CameraActivity"
             android:exported="false" />
+        <activity
+            android:name="com.dds.camera.camera1.Camera1TextureViewActivity"
+            android:exported="false"
+            android:label="Camera1TextureView"
+            android:screenOrientation="portrait" />
         <activity
             android:name="com.dds.camera.camera1.Camera1SurfaceViewActivity"
             android:exported="false"
-            android:label="Camera1" />
-        <activity
-            android:name="com.dds.camera.CameraActivity"
-            android:exported="false" />
+            android:label="Camera1SurfaceView"
+            android:screenOrientation="portrait" />
         <activity
             android:name="com.dds.camera.camera2.Camera2SurfaceViewActivity"
             android:exported="false"
