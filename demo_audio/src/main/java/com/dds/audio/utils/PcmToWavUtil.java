@@ -1,4 +1,4 @@
-package com.dds.audio;
+package com.dds.audio.utils;
 
 import android.media.AudioFormat;
 import android.media.AudioRecord;
@@ -31,7 +31,7 @@ public class PcmToWavUtil {
      * @param channel channel、声道
      * @param encoding Audio data format、音频格式
      */
-    PcmToWavUtil(int sampleRate, int channel, int encoding) {
+    public PcmToWavUtil(int sampleRate, int channel, int encoding) {
         this.mSampleRate = sampleRate;
         this.mChannel = channel;
         this.mBufferSize = AudioRecord.getMinBufferSize(mSampleRate, mChannel, encoding);

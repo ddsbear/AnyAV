@@ -8,9 +8,11 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-package com.dds.gles.demo2.render;
+package com.dds.gles.render;
 
 import android.opengl.GLES20;
+
+import com.dds.gles.demo2.render.GLESTool;
 
 
 public class GlFrameBuffer {

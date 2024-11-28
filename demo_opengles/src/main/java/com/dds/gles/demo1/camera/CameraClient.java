@@ -32,7 +32,7 @@ public class CameraClient {
     private final ConfigureStateCallBack configureStateCallBack;
     private CameraManager mCameraManager;
     private String mCameraName;
-    private Context mContext;
+    private final Context mContext;
 
 
     public CameraClient(Context context, CameraManager cameraManager, Handler handler, CameraDevice.StateCallback cameraStateCallback) {

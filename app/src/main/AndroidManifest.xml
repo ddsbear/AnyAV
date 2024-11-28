@@ -23,6 +23,10 @@
         android:theme="@style/AppTheme"
         tools:ignore="GoogleAppIndexingWarning">
 
+        <!-- flip-->
+        <property
+            android:name="miui.continuity.policy"
+            android:value="5" />
 
         <activity
             android:name=".MainActivity"

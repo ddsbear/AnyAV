@@ -71,7 +71,11 @@ public class Camera2Manager {
         if (mClient != null) {
             mClient.release();
         }
+        if (cameraPreViewRenderer != null) {
+            cameraPreViewRenderer.release();
+        }
         stopCameraThread();
+
     }
 
     public Size getPreviewSize() {

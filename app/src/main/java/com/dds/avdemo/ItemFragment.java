@@ -16,6 +16,7 @@ import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.dds.audio.AudioActivity;
 import com.dds.camera.CameraActivity;
 import com.dds.gles.OpenGLListActivity;
 
@@ -34,6 +35,7 @@ public class ItemFragment extends Fragment {
     static {
         addItem("Camera Demo", CameraActivity.class);
         addItem("OpenGL Demo", OpenGLListActivity.class);
+        addItem("Audio Demo", AudioActivity.class);
     }
 
     public static void addItem(String content, Class<?> clazz) {

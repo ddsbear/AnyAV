@@ -13,6 +13,13 @@ import java.nio.FloatBuffer;
 
 public class ProgramUtil {
     private static final String TAG = "ProgramUtil";
+    // 纹理坐标
+    public static final float[] sCoordinate = {
+            0.0f, 1.0f,       // left-up
+            0.0f, 0.0f,       // left-bottom
+            1.0f, 1.0f,       // right-up
+            1.0f, 0.0f,       // right-bottom
+    };
 
     /**
      * 加载着色器

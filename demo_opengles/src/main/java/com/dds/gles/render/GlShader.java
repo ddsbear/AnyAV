@@ -1,7 +1,9 @@
-package com.dds.gles.demo2.render;
+package com.dds.gles.render;
 
 import android.opengl.GLES20;
 import android.util.Log;
+
+import com.dds.gles.demo2.render.GLESTool;
 
 public class GlShader {
     private static final String TAG = "GlShader";

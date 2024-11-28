@@ -5,7 +5,7 @@ import android.opengl.GLES20;
 import android.opengl.Matrix;
 import android.util.Log;
 
-import com.dds.gles.demo2.render.filter.GreyFilter;
+import com.dds.gles.render.GlShader;
 
 import java.nio.FloatBuffer;
 

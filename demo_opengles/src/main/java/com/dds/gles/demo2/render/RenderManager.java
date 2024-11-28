@@ -18,6 +18,7 @@ import android.view.Surface;
 import androidx.annotation.NonNull;
 
 import com.dds.gles.demo2.render.filter.GreyFilter;
+import com.dds.gles.render.GlFrameBuffer;
 
 import java.util.concurrent.CompletableFuture;
 
@@ -288,6 +289,7 @@ public class RenderManager {
             mSurfaceTexture.updateTexImage();
             // eglMakeCurrent
             EGL14.eglMakeCurrent(mEGLDisplay, previewEglSurface, previewEglSurface, mEGLContext);
+            GLES20.glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
 
             mFrameBuffer.bind();
             // draw
@@ -300,11 +302,10 @@ public class RenderManager {
                 filter.prepare();
                 filter.draw(mSTMatrix);
             }
-            mFrameBuffer.unbind();
-
             mRGBTextureRenderer.prepareShader(GlTextureRenderer.ShaderType.RGB);
             mRGBTextureRenderer.drawRgbTexture(mFrameBuffer.getTextureId(), mSTMatrix, 0, 0, mWidth, mHeight);
 
+            mFrameBuffer.unbind();
             // eglSwapBuffers
             EGL14.eglSwapBuffers(mEGLDisplay, previewEglSurface);
 

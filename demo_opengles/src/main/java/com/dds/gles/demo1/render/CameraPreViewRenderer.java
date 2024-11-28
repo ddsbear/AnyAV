@@ -3,12 +3,14 @@ package com.dds.gles.demo1.render;
 import android.graphics.SurfaceTexture;
 import android.opengl.GLES11Ext;
 import android.opengl.GLES20;
-import android.opengl.GLES31;
 import android.opengl.GLSurfaceView;
 import android.opengl.Matrix;
 import android.util.Log;
 import android.util.Size;
 
+
+import com.dds.gles.render.GlFrameBuffer;
+import com.dds.gles.render.GlShader;
 
 import java.nio.FloatBuffer;
 import java.util.concurrent.CompletableFuture;
@@ -19,7 +21,7 @@ import javax.microedition.khronos.opengles.GL10;
 public class CameraPreViewRenderer implements GLSurfaceView.Renderer {
     private static final String TAG = "dds_CameraPreViewRenderer";
     private SurfaceTexture surfaceTexture;
-    private CompletableFuture<SurfaceTexture> completableFuture;
+    private final CompletableFuture<SurfaceTexture> completableFuture;
 
 
     private static final boolean sUseFbo = true;
@@ -66,29 +68,33 @@ public class CameraPreViewRenderer implements GLSurfaceView.Renderer {
             "    gl_FragColor = texture2D(vTexture,tc);\n" +
             "}";
 
-    private static final String FRAGMENT_SHADER_BEAUTY = "precision mediump float;\n"
+    private static final String FRAGMENT_SHADER_FILTER = "precision mediump float;\n"
             + "varying vec2 tc;\n"
             + "uniform sampler2D vTexture;\n"
             + "void main(){\n"
             + "  vec4 mask = texture2D(vTexture, tc);\n"
-            + "  gl_FragColor = vec4(mask.g,mask.g,mask.g,1.0);\n"
+            + "  gl_FragColor = vec4(mask.r,mask.g,mask.g,1.0);\n"
             + "}";
 
 
     private final float[] mMVPMatrix = new float[16];
 
-    int program;
-    int program1;
-    int program2;
+
     FloatBuffer bPosition;
     FloatBuffer bCoordinate;
 
     // oes
     int oesTextureId;
+
+    // shader
+    GlShader shader;
+    // framebuffer
+    GlFrameBuffer frameBuffer;
     // fbo
-    FrameBuffer frameBuffer;
-    int mFrameBufferTextureId = -1;
-    int mFrameBufferId = -1;
+    GlShader shaderFbo;
+    // filter
+    GlShader filter;
+
     Size mBuferSize;
     int mWidth;
     int mHeight;
@@ -114,18 +120,17 @@ public class CameraPreViewRenderer implements GLSurfaceView.Renderer {
         // bind SurfaceTexture
         surfaceTexture = new SurfaceTexture(oesTextureId);
         // loadRenderShaders
-        program = ProgramUtil.createOpenGLProgram(VERTEX_SHADER_CAMERA, FRAGMENT_SHADER_CAMERA);
+        shader = new GlShader(VERTEX_SHADER_CAMERA, FRAGMENT_SHADER_CAMERA);
         if (sUseFbo) {
-            program1 = ProgramUtil.createOpenGLProgram(VERTEX_SHADER_CAMERA, FRAGMENT_SHADER_FBO);
+            shaderFbo = new GlShader(VERTEX_SHADER_CAMERA, FRAGMENT_SHADER_FBO);
             if (sUseFilter) {
-                program2 = ProgramUtil.createOpenGLProgram(VERTEX_SHADER_CAMERA, FRAGMENT_SHADER_BEAUTY);
+                filter = new GlShader(VERTEX_SHADER_CAMERA, FRAGMENT_SHADER_FILTER);
             }
         }
-        frameBuffer = new FrameBuffer(GLES20.GL_RGBA);
+        frameBuffer = new GlFrameBuffer(GLES20.GL_RGBA);
         frameBuffer.allocateBuffers(mBuferSize.getWidth(), mBuferSize.getHeight());
 
-        mFrameBufferTextureId = frameBuffer.getTextureId();
-        mFrameBufferId = frameBuffer.getFrameBufferId();
+
         completableFuture.complete(surfaceTexture);
 
 
@@ -145,30 +150,21 @@ public class CameraPreViewRenderer implements GLSurfaceView.Renderer {
         surfaceTexture.updateTexImage();
         surfaceTexture.getTransformMatrix(mMVPMatrix);
 
-//        Matrix.setIdentityM(mMVPMatrix, 0);
-//        // back facing camera
-//        Matrix.translateM(mMVPMatrix, 0, 1f, 1f, 0);
-//        Matrix.scaleM(mMVPMatrix, 0, 1, -1, 1);
-//        Matrix.rotateM(mMVPMatrix, 0, 90, 0, 0, 1);
-        // front facing camera
-//        Matrix.translateM(mMVPMatrix, 0, 0f, 1f, 0);
-//        Matrix.rotateM(mMVPMatrix, 0, -90, 0, 0, 1);
-
         // clear
         GLES20.glClearColor(0, 0, 0, 0);
         GLES20.glClear(GLES20.GL_DEPTH_BUFFER_BIT | GLES20.GL_COLOR_BUFFER_BIT);
 
         // use program
-        GLES20.glUseProgram(program);
+        shader.useProgram();
 
         if (sUseFbo) {
             GLES20.glViewport(0, 0, mBuferSize.getWidth(), mBuferSize.getHeight());
-            GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, mFrameBufferId);
+            frameBuffer.bind();
         }
 
         // set bPosition value
-        int vPosition = GLES20.glGetAttribLocation(program, "vPosition");
-        int vCoordinate = GLES20.glGetAttribLocation(program, "vCoordinate");
+        int vPosition = shader.getAttribLocation("vPosition");
+        int vCoordinate = shader.getAttribLocation("vCoordinate");
 
         GLES20.glVertexAttribPointer(vPosition, 2, GLES20.GL_FLOAT, false, 0, bPosition);
         GLES20.glEnableVertexAttribArray(vPosition);
@@ -177,54 +173,68 @@ public class CameraPreViewRenderer implements GLSurfaceView.Renderer {
         GLES20.glVertexAttribPointer(vCoordinate, 2, GLES20.GL_FLOAT, false, 0, bCoordinate);
         GLES20.glEnableVertexAttribArray(vCoordinate);
 
-
         // bindTexture
         GLES20.glActiveTexture(GLES20.GL_TEXTURE1);
         GLES20.glBindTexture(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, oesTextureId);
 
-
         // set matrix value
-        GLES20.glUniformMatrix4fv(GLES20.glGetUniformLocation(program, "vMatrix"), 1, false, mMVPMatrix, 0);
+        GLES20.glUniformMatrix4fv(shader.getUniformLocation("vMatrix"), 1, false, mMVPMatrix, 0);
 
         // 赋值tc
-        GLES20.glUniform1i(GLES20.glGetUniformLocation(program, "vTexture"), 0);
+        GLES20.glUniform1i(shader.getUniformLocation("vTexture"), 0);
         GLES20.glDrawArrays(GLES20.GL_TRIANGLE_STRIP, 0, sCoordinate.length / 2);
 
-        GLES20.glFlush();
-
-        GLES20.glFinish();
 
         if (sUseFbo) {
+            frameBuffer.unbind();
 
             GLES20.glViewport(0, 0, mWidth, mHeight);
-            GLES20.glUseProgram(program1);
-            GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, 0);
 
             Matrix.translateM(mMVPMatrix, 0, 0f, 1f, 0);
             Matrix.rotateM(mMVPMatrix, 0, 90, 0, 0, 1);
 
+            // use program
+            shaderFbo.useProgram();
 
+            // bindTexture
             GLES20.glActiveTexture(GLES20.GL_TEXTURE0);
-            GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, mFrameBufferTextureId);
+            GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, frameBuffer.getTextureId());
 
-            GLES20.glUniformMatrix4fv(GLES20.glGetUniformLocation(program1, "vMatrix"), 1, false, mMVPMatrix, 0);
+            // set matrix value
+            GLES20.glUniformMatrix4fv(shaderFbo.getUniformLocation("vMatrix"), 1, false, mMVPMatrix, 0);
 
-            GLES20.glUniform1i(GLES20.glGetUniformLocation(program1, "vTexture"), 0);
+            // 赋值tc
+            GLES20.glUniform1i(shaderFbo.getUniformLocation("vTexture"), 0);
             GLES20.glDrawArrays(GLES20.GL_TRIANGLE_STRIP, 0, sCoordinate.length / 2);
 
             if (sUseFilter) {
-                GLES20.glUseProgram(program2);
+                // use program
+                filter.useProgram();
 
-                GLES20.glUniformMatrix4fv(GLES20.glGetUniformLocation(program2, "vMatrix"), 1, false, mMVPMatrix, 0);
+                // set matrix value
+                GLES20.glUniformMatrix4fv(filter.getUniformLocation("vMatrix"), 1, false, mMVPMatrix, 0);
 
-                GLES20.glUniform1i(GLES20.glGetUniformLocation(program2, "vTexture"), 0);
+                // 赋值tc
+                GLES20.glUniform1i(filter.getUniformLocation("vTexture"), 0);
                 GLES20.glDrawArrays(GLES20.GL_TRIANGLE_STRIP, 0, sCoordinate.length / 2);
             }
+
         }
-
-        GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, 0);
-        GLES20.glUseProgram(0);
-
     }
 
+    public void release() {
+        if (shader != null) {
+            shader.release();
+        }
+        if (shaderFbo != null) {
+            shaderFbo.release();
+        }
+        if (filter != null) {
+            filter.release();
+        }
+        if (frameBuffer != null) {
+            frameBuffer.release();
+        }
+
+    }
 }

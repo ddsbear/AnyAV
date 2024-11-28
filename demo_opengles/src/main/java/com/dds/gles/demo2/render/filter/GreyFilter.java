@@ -4,7 +4,7 @@ import android.opengl.GLES20;
 import android.opengl.Matrix;
 
 import com.dds.gles.demo2.render.BaseTextureRender;
-import com.dds.gles.demo2.render.GlShader;
+import com.dds.gles.render.GlShader;
 
 
 public class GreyFilter {
@@ -44,14 +44,14 @@ public class GreyFilter {
         return BaseTextureRender.VERTEX_SHADER_DEFAULT;
     }
 
-    // 灰度
+
     private String getGreyFragmentShader() {
         return "precision mediump float;\n" +
                 "varying vec2 tc;\n" +
                 "uniform sampler2D sTexture;\n" +
                 "void main() {\n" +
                 "    vec4 mask = texture2D(sTexture, tc);\n" +
-                "    gl_FragColor = vec4(mask.g,mask.g,mask.g,1.0);\n" +
+                "    gl_FragColor = vec4(mask.r,mask.g,mask.g,1.0);\n" +
                 "}";
     }
 

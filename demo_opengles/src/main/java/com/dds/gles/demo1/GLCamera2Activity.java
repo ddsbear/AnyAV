@@ -65,7 +65,6 @@ public class GLCamera2Activity extends AppCompatActivity {
     protected void onResume() {
         super.onResume();
         surfaceView.onResume();
-
     }
 
     @Override

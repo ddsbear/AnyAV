@@ -1,4 +1,4 @@
-package com.dds.audio;
+package com.dds.audio.view;
 
 import android.content.Context;
 import android.content.res.TypedArray;
@@ -9,8 +9,6 @@ import android.graphics.Path;
 import android.graphics.Rect;
 import android.util.AttributeSet;
 import android.view.View;
-
-import androidx.core.content.ContextCompat;
 
 
 import com.example.audio.R;

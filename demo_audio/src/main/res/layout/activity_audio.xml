@@ -7,7 +7,7 @@
     android:orientation="vertical"
     tools:context="com.dds.audio.AudioActivity">
 
-    <com.dds.audio.AudioWaveView
+    <com.dds.audio.view.AudioWaveView
         android:id="@+id/waveLine"
         android:layout_width="match_parent"
         android:layout_height="200dp"
