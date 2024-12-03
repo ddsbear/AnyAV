@@ -35,7 +35,6 @@ public class ItemFragment extends Fragment {
     static {
         addItem("Camera Demo", CameraActivity.class);
         addItem("OpenGL Demo", OpenGLListActivity.class);
-        addItem("Audio Demo", AudioActivity.class);
     }
 
     public static void addItem(String content, Class<?> clazz) {

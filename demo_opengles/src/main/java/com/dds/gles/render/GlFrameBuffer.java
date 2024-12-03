@@ -12,8 +12,6 @@ package com.dds.gles.render;
 
 import android.opengl.GLES20;
 
-import com.dds.gles.demo2.render.GLESTool;
-
 
 public class GlFrameBuffer {
     private final int pixelFormat;

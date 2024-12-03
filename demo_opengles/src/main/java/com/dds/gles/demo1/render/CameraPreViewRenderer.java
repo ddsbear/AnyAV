@@ -1,5 +1,10 @@
 package com.dds.gles.demo1.render;
 
+import static com.dds.gles.demo1.render.TextureBaseInfo.FRAGMENT_SHADER_FBO;
+import static com.dds.gles.demo1.render.TextureBaseInfo.VERTEX_SHADER_CAMERA;
+import static com.dds.gles.demo1.render.TextureBaseInfo.sCoordinate;
+import static com.dds.gles.demo1.render.TextureBaseInfo.sPosition;
+
 import android.graphics.SurfaceTexture;
 import android.opengl.GLES11Ext;
 import android.opengl.GLES20;
@@ -9,6 +14,7 @@ import android.util.Log;
 import android.util.Size;
 
 
+import com.dds.gles.render.GLESTool;
 import com.dds.gles.render.GlFrameBuffer;
 import com.dds.gles.render.GlShader;
 
@@ -25,60 +31,9 @@ public class CameraPreViewRenderer implements GLSurfaceView.Renderer {
 
 
     private static final boolean sUseFbo = true;
-    private static final boolean sUseFilter = true;
-
-    // 顶点坐标
-    private static final float[] sPosition = {
-            -1.0f, 1.0f,    //left-up        1-------3
-            -1.0f, -1.0f,   //left-bottom    |    /  |
-            1.0f, 1.0f,     //right-up       |  /    |
-            1.0f, -1.0f     //right-bottom   2-------4
-    };
-
-    // 纹理坐标
-    private static final float[] sCoordinate = {
-            0.0f, 1.0f,       // left-up
-            0.0f, 0.0f,       // left-bottom
-            1.0f, 1.0f,       // right-up
-            1.0f, 0.0f,       // right-bottom
-    };
-
-    private static final String VERTEX_SHADER_CAMERA = "attribute vec4 vPosition;\n" +
-            "attribute vec4 vCoordinate;\n" +
-            "uniform mat4 vMatrix;\n" +
-            "varying vec2 tc;\n" +
-            "void main() {\n" +
-            "    gl_Position = vPosition;\n" +
-            "    tc = (vMatrix * vCoordinate).xy;\n" +
-            "}";
-
-    private static final String FRAGMENT_SHADER_CAMERA = "#extension GL_OES_EGL_image_external: require\n" +
-            "precision mediump float;\n" +
-            "varying vec2 tc;\n" +
-            "uniform samplerExternalOES vTexture;\n" +
-            "void main() {\n" +
-            "    gl_FragColor = texture2D(vTexture,tc);\n" +
-            "}";
-
-    private static final String FRAGMENT_SHADER_FBO = "#extension GL_OES_EGL_image_external: require\n" +
-            "precision mediump float;\n" +
-            "varying vec2 tc;\n" +
-            "uniform sampler2D vTexture;\n" +
-            "void main() {\n" +
-            "    gl_FragColor = texture2D(vTexture,tc);\n" +
-            "}";
-
-    private static final String FRAGMENT_SHADER_FILTER = "precision mediump float;\n"
-            + "varying vec2 tc;\n"
-            + "uniform sampler2D vTexture;\n"
-            + "void main(){\n"
-            + "  vec4 mask = texture2D(vTexture, tc);\n"
-            + "  gl_FragColor = vec4(mask.r,mask.g,mask.g,1.0);\n"
-            + "}";
-
+    private boolean sUseFilter = false;
 
     private final float[] mMVPMatrix = new float[16];
-
 
     FloatBuffer bPosition;
     FloatBuffer bCoordinate;
@@ -104,28 +59,28 @@ public class CameraPreViewRenderer implements GLSurfaceView.Renderer {
     }
 
     public CameraPreViewRenderer(Size mPreviewSize) {
-        bPosition = ProgramUtil.createFloatBuffer(sPosition);
-        bCoordinate = ProgramUtil.createFloatBuffer(sCoordinate);
+        bPosition = GLESTool.createFloatBuffer(sPosition);
+        bCoordinate = GLESTool.createFloatBuffer(sCoordinate);
         completableFuture = new CompletableFuture<>();
         mBuferSize = mPreviewSize;
+    }
+
+    public void enableFilter(boolean enable) {
+        sUseFilter = enable;
     }
 
     @Override
     public void onSurfaceCreated(GL10 gl, EGLConfig config) {
         Log.d(TAG, "onSurfaceCreated: ");
         // create texture
-        int[] textures = new int[1];
-        ProgramUtil.createOESTexture(textures);
-        oesTextureId = textures[0];
+        oesTextureId = GLESTool.createOESTexture();
         // bind SurfaceTexture
         surfaceTexture = new SurfaceTexture(oesTextureId);
         // loadRenderShaders
-        shader = new GlShader(VERTEX_SHADER_CAMERA, FRAGMENT_SHADER_CAMERA);
+        shader = new GlShader(VERTEX_SHADER_CAMERA, TextureBaseInfo.FRAGMENT_SHADER_CAMERA);
         if (sUseFbo) {
             shaderFbo = new GlShader(VERTEX_SHADER_CAMERA, FRAGMENT_SHADER_FBO);
-            if (sUseFilter) {
-                filter = new GlShader(VERTEX_SHADER_CAMERA, FRAGMENT_SHADER_FILTER);
-            }
+            filter = new GlShader(VERTEX_SHADER_CAMERA, TextureBaseInfo.FRAGMENT_SHADER_FILTER);
         }
         frameBuffer = new GlFrameBuffer(GLES20.GL_RGBA);
         frameBuffer.allocateBuffers(mBuferSize.getWidth(), mBuferSize.getHeight());

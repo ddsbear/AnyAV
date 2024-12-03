@@ -1,4 +1,4 @@
-package com.dds.gles.demo2.render;
+package com.dds.gles.render;
 
 import android.opengl.EGL14;
 import android.opengl.GLES11Ext;

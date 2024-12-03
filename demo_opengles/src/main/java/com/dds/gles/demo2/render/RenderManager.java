@@ -8,6 +8,7 @@ import android.opengl.EGLDisplay;
 import android.opengl.EGLExt;
 import android.opengl.EGLSurface;
 import android.opengl.GLES20;
+import android.opengl.Matrix;
 import android.os.Handler;
 import android.os.HandlerThread;
 import android.os.Looper;
@@ -18,6 +19,8 @@ import android.view.Surface;
 import androidx.annotation.NonNull;
 
 import com.dds.gles.demo2.render.filter.GreyFilter;
+import com.dds.gles.demo2.render.filter.SkinSmoothFilter;
+import com.dds.gles.render.GLESTool;
 import com.dds.gles.render.GlFrameBuffer;
 
 import java.util.concurrent.CompletableFuture;
@@ -28,6 +31,8 @@ public class RenderManager {
     private final GLHandler mHandler;
 
     private final Object syncOp = new Object();
+
+    private static final boolean sUseFbo = true;
 
     public RenderManager() {
         mGLHandlerThread = new HandlerThread(TAG);
@@ -102,6 +107,13 @@ public class RenderManager {
         }
     }
 
+    public void enableBeauty(boolean enableBeauty) {
+        synchronized (syncOp) {
+            mHandler.removeMessages(GLHandler.MSG_BEAUTY);
+            mHandler.sendMessage(mHandler.obtainMessage(GLHandler.MSG_BEAUTY, enableBeauty ? 1 : 0, 0));
+        }
+    }
+
     private static class GLHandler extends Handler {
 
         static final int MSG_SETUP = 0x01;
@@ -111,6 +123,7 @@ public class RenderManager {
         static final int MSG_RESOLUTION = 0x05;
         static final int MSG_RELEASE = 0x06;
         static final int MSG_FILTER = 0x07;
+        static final int MSG_BEAUTY = 0x08;
 
         private EGLDisplay mEGLDisplay = EGL14.EGL_NO_DISPLAY;
         private EGLConfig mConfig;
@@ -124,9 +137,6 @@ public class RenderManager {
         private GlTextureRenderer mGlTextureRenderer;
         private GlTextureRenderer mRGBTextureRenderer;
 
-        private int mBufferWidth;
-        private int mBufferHeight;
-
         private int mWidth;
         private int mHeight;
 
@@ -135,6 +145,8 @@ public class RenderManager {
         private boolean isFilterEnable;
         private GreyFilter filter;
 
+        private boolean isBeautyEnable;
+        private SkinSmoothFilter smoothFilter;
 
         public GLHandler(Looper looper) {
             super(looper);
@@ -169,6 +181,9 @@ public class RenderManager {
                 case MSG_FILTER:
                     handleEnableFilter(msg.arg1);
                     break;
+                case MSG_BEAUTY:
+                    handleEnableBeauty(msg.arg1);
+                    break;
                 default:
                     break;
             }
@@ -191,7 +206,7 @@ public class RenderManager {
                 throw new GLESTool.EglError("eglInitialize failed:");
             }
             Log.d(TAG, "initOffScreenGL: 2. EGL eglInitialize success");
-            int attribList[] = {
+            int[] attribList = {
                     EGL14.EGL_RED_SIZE, 8,
                     EGL14.EGL_GREEN_SIZE, 8,
                     EGL14.EGL_BLUE_SIZE, 8,
@@ -247,22 +262,20 @@ public class RenderManager {
         }
 
         private void handleSetup(int width, int height) {
-            mBufferWidth = width;
-            mBufferHeight = height;
-            // bindTexture
+            // createTexture
             mTextureID = GLESTool.createOESTexture();
-            Log.d(TAG, "handleSetup: createOESTexture width = " + width + ",height = " + height);
+            // new SurfaceTexture
             mSurfaceTexture = new SurfaceTexture(mTextureID);
-            Log.d(TAG, "handleSetup: mSurfaceTexture = " + mSurfaceTexture);
+
             mGlTextureRenderer = new GlTextureRenderer();
-            mRGBTextureRenderer = new GlTextureRenderer();
 
-
-            mFrameBuffer = new GlFrameBuffer(GLES20.GL_RGBA);
-            mFrameBuffer.allocateBuffers(mBufferWidth, mBufferHeight);
-
-            filter = new GreyFilter();
-
+            if (sUseFbo) {
+                mRGBTextureRenderer = new GlTextureRenderer();
+                mFrameBuffer = new GlFrameBuffer(GLES20.GL_RGBA);
+                mFrameBuffer.allocateBuffers(width, height);
+                filter = new GreyFilter();
+                smoothFilter = new SkinSmoothFilter();
+            }
             mSurfaceFuture.complete(mSurfaceTexture);
         }
 
@@ -289,23 +302,33 @@ public class RenderManager {
             mSurfaceTexture.updateTexImage();
             // eglMakeCurrent
             EGL14.eglMakeCurrent(mEGLDisplay, previewEglSurface, previewEglSurface, mEGLContext);
+            // glClear
             GLES20.glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
 
-            mFrameBuffer.bind();
+            if (sUseFbo) {
+                mFrameBuffer.bind();
+            }
             // draw
             float[] mSTMatrix = new float[16];
             mSurfaceTexture.getTransformMatrix(mSTMatrix);
             mGlTextureRenderer.prepareShader(GlTextureRenderer.ShaderType.OES);
             mGlTextureRenderer.drawOesTexture(mTextureID, mSTMatrix, 0, 0, mWidth, mHeight);
 
-            if (isFilterEnable) {
-                filter.prepare();
-                filter.draw(mSTMatrix);
-            }
-            mRGBTextureRenderer.prepareShader(GlTextureRenderer.ShaderType.RGB);
-            mRGBTextureRenderer.drawRgbTexture(mFrameBuffer.getTextureId(), mSTMatrix, 0, 0, mWidth, mHeight);
+            if (sUseFbo) {
+                mFrameBuffer.unbind();
+                mRGBTextureRenderer.prepareShader(GlTextureRenderer.ShaderType.RGB);
+                mRGBTextureRenderer.drawRgbTexture(mFrameBuffer.getTextureId(), mSTMatrix, 0, 0, mWidth, mHeight);
 
-            mFrameBuffer.unbind();
+                if (isBeautyEnable) {
+                    smoothFilter.prepare();
+                    smoothFilter.draw(mSTMatrix, mWidth, mHeight);
+                }
+
+                if (isFilterEnable) {
+                    filter.prepare();
+                    filter.draw(mSTMatrix);
+                }
+            }
             // eglSwapBuffers
             EGL14.eglSwapBuffers(mEGLDisplay, previewEglSurface);
 
@@ -357,12 +380,11 @@ public class RenderManager {
         }
 
         private void handleEnableFilter(int arg1) {
-            if (arg1 == 1) {
-                isFilterEnable = true;
-            } else {
-                isFilterEnable = false;
-            }
+            isFilterEnable = arg1 == 1;
+        }
 
+        private void handleEnableBeauty(int arg1) {
+            isBeautyEnable = arg1 == 1;
         }
     }
 

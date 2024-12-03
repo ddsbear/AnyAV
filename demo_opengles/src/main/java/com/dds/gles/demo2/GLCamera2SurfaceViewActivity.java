@@ -73,6 +73,7 @@ public class GLCamera2SurfaceViewActivity extends AppCompatActivity implements S
     private boolean isConfigOrientated;
 
     private boolean isFilterEnable;
+    private boolean isBeautyEnable;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -138,8 +139,11 @@ public class GLCamera2SurfaceViewActivity extends AppCompatActivity implements S
         int id = view.getId();
         if (id == R.id.btn_filter) {
             handleFilter();
+        } else if (id == R.id.btn_beauty) {
+            handleBeauty();
         }
     }
+
 
     private void initView() {
         mSurfaceView = findViewById(R.id.surface_container);
@@ -175,8 +179,8 @@ public class GLCamera2SurfaceViewActivity extends AppCompatActivity implements S
             mSurfaceView.setAspectRatio(mPreviewSize.getWidth(), mPreviewSize.getHeight());
             Size layoutSize = CameraUtils.findBestLayoutSize(this, mPreviewSize);
             FrameLayout.LayoutParams params = (FrameLayout.LayoutParams) mSurfaceView.getLayoutParams();
-            params.width = (int) layoutSize.getWidth();
-            params.height = (int) layoutSize.getHeight();
+            params.width = layoutSize.getWidth();
+            params.height = layoutSize.getHeight();
             params.gravity = Gravity.CENTER;
             orientationLiveData = new OrientationLiveData(this, characteristics);
             orientationLiveData.observe(this, integer -> {
@@ -251,14 +255,11 @@ public class GLCamera2SurfaceViewActivity extends AppCompatActivity implements S
     }
 
     private void handleFilter() {
-        if (!isFilterEnable) {
-            isFilterEnable = true;
-            mRenderManager.enableFilter(true);
-        } else {
-            isFilterEnable = false;
-            mRenderManager.enableFilter(false);
-        }
+        mRenderManager.enableFilter(isFilterEnable = !isFilterEnable);
+    }
 
+    private void handleBeauty() {
+        mRenderManager.enableBeauty(isBeautyEnable = !isBeautyEnable);
     }
 
 

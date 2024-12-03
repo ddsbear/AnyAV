@@ -29,8 +29,8 @@ public class Camera2Manager {
     private HandlerThread mCameraThread;
     private CameraClient mClient;
     private final CameraOpenStateCallback stateCallback = new CameraOpenStateCallback();
-    private CameraManager mCameraManager;
-    private Size mDesiredPreviewSize;
+    private final CameraManager mCameraManager;
+    private final Size mDesiredPreviewSize;
     private Size mPreviewSize;
     private CameraPreViewRenderer cameraPreViewRenderer;
 
@@ -73,8 +73,16 @@ public class Camera2Manager {
         }
         if (cameraPreViewRenderer != null) {
             cameraPreViewRenderer.release();
+            cameraPreViewRenderer = null;
         }
         stopCameraThread();
+
+    }
+
+    public void enableFilter(boolean enable){
+        if(cameraPreViewRenderer!=null){
+            cameraPreViewRenderer.enableFilter(enable);
+        }
 
     }
 

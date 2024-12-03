@@ -1,5 +1,7 @@
 package com.dds.gles.demo2.render;
 
+import com.dds.gles.render.GLESTool;
+
 import java.nio.FloatBuffer;
 
 public class BaseTextureRender {

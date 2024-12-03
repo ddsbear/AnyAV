@@ -1,34 +1,35 @@
 package com.dds.gles.demo1;
 
-import android.content.pm.ActivityInfo;
 import android.opengl.GLSurfaceView;
 import android.os.Bundle;
 import android.util.Size;
 import android.view.Gravity;
 import android.view.View;
 import android.widget.FrameLayout;
+import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.dds.base.camera.CameraUtils;
 import com.dds.base.utils.StatueBarUtils;
+import com.dds.base.utils.Toasts;
 import com.dds.gles.R;
 import com.dds.gles.demo1.camera.Camera2Manager;
-import com.dds.gles.demo2.Utils;
 
 public class GLCamera2Activity extends AppCompatActivity {
     private static final String TAG = "GLCameraActivity";
     private GLSurfaceView surfaceView;
     private Camera2Manager camera2Manager;
     private final Size mDesiredPreviewSize = new Size(1920, 1080);
+    private boolean enableFilter = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         StatueBarUtils.setStatusBarOrScreenStatus(this);
-        if (!Utils.isTablet(this)) {
-            setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LOCKED);
-        }
+//        if (!Utils.isTablet(this)) {
+//            setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LOCKED);
+//        }
         setContentView(R.layout.activity_gl_camera2);
         surfaceView = findViewById(R.id.gl_surface);
         updateView(surfaceView);
@@ -41,7 +42,6 @@ public class GLCamera2Activity extends AppCompatActivity {
         camera2Manager.openCamera();
         // set render
         surfaceView.setRenderer(camera2Manager.getCameraPreViewRenderer());
-
 
 
     }
@@ -78,9 +78,10 @@ public class GLCamera2Activity extends AppCompatActivity {
     }
 
     public void onPicture(View view) {
+        Toasts.show(this, "not support yet", Toast.LENGTH_SHORT);
     }
 
     public void onFilter(View view) {
-
+        camera2Manager.enableFilter(enableFilter = !enableFilter);
     }
 }

@@ -21,10 +21,6 @@ public class GreyFilter {
 
         shader.useProgram();
 
-        Matrix.translateM(mSTMatrix, 0, 0f, 1f, 0);
-        Matrix.rotateM(mSTMatrix, 0, 90, 0, 0, 1);
-
-
         GLES20.glUniformMatrix4fv(shader.getUniformLocation("tex_mat"), 1, false, mSTMatrix, 0);
 
         GLES20.glUniform1i(shader.getUniformLocation("sTexture"), 0);
@@ -43,7 +39,6 @@ public class GreyFilter {
     private String getVertexShader() {
         return BaseTextureRender.VERTEX_SHADER_DEFAULT;
     }
-
 
     private String getGreyFragmentShader() {
         return "precision mediump float;\n" +

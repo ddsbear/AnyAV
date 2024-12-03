@@ -5,6 +5,7 @@ import android.opengl.GLES20;
 import android.opengl.Matrix;
 import android.util.Log;
 
+import com.dds.gles.render.GLESTool;
 import com.dds.gles.render.GlShader;
 
 import java.nio.FloatBuffer;
@@ -88,6 +89,8 @@ public class GlTextureRenderer extends BaseTextureRender {
         // Draw the textures.
         GLES20.glDrawArrays(GLES20.GL_TRIANGLE_STRIP, 0, 4);
         GLESTool.checkGlError("glDrawArrays");
+        // Unbind the texture as a precaution.
+        GLES20.glBindTexture(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, 0);
     }
 
     public void drawRgbTexture(int textureId, float[] mTexMatrix, int viewportX, int viewportY,
