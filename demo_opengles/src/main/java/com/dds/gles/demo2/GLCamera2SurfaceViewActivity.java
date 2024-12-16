@@ -1,23 +1,8 @@
 package com.dds.gles.demo2;
 
-import android.Manifest;
-import android.content.Context;
-import android.content.pm.ActivityInfo;
-import android.content.pm.PackageManager;
 import android.content.res.Configuration;
 import android.graphics.SurfaceTexture;
-import android.hardware.camera2.CameraAccessException;
-import android.hardware.camera2.CameraCaptureSession;
-import android.hardware.camera2.CameraCharacteristics;
-import android.hardware.camera2.CameraDevice;
-import android.hardware.camera2.CameraManager;
-import android.hardware.camera2.CaptureRequest;
-import android.hardware.camera2.CaptureResult;
-import android.hardware.camera2.TotalCaptureResult;
-import android.hardware.camera2.params.StreamConfigurationMap;
 import android.os.Bundle;
-import android.os.Handler;
-import android.os.HandlerThread;
 import android.util.Log;
 import android.util.Size;
 import android.view.Gravity;
@@ -28,83 +13,71 @@ import android.widget.FrameLayout;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.app.ActivityCompat;
 
 import com.dds.base.camera.CameraUtils;
 import com.dds.base.utils.StatueBarUtils;
 import com.dds.gles.R;
+import com.dds.gles.camera.Camera2Manager;
 import com.dds.gles.demo2.render.RenderManager;
 import com.dds.gles.demo2.view.AutoFitSurfaceView;
 
-import java.util.Arrays;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 
 public class GLCamera2SurfaceViewActivity extends AppCompatActivity implements SurfaceHolder.Callback, SurfaceTexture.OnFrameAvailableListener {
-    private static final String TAG = "RenderActivity";
+    private static final String TAG = "dds_RenderActivity";
     private AutoFitSurfaceView mSurfaceView;
     private Surface mPreviewSurface;
 
     private final Size mDesiredPreviewSize = new Size(1280, 720);
-    private Size mPreviewSize;
-
-    private final Semaphore mCameraOpenCloseLock = new Semaphore(1);
-
-    /**
-     * A reference to the opened {@link CameraDevice}.
-     */
-    private CameraDevice mCameraDevice;
-    private CaptureRequest.Builder mPreviewRequestBuilder;
-    private CameraCaptureSession mCaptureSession;
-
-    private HandlerThread mBackgroundThread;
-    private Handler mBackgroundHandler;
-
-    // camera
-    private String mCameraId;
-    private CameraManager manager;
-
-    private OrientationLiveData orientationLiveData;
 
     private RenderManager mRenderManager;
 
-    private boolean isConfigOrientated;
-
     private boolean isFilterEnable;
     private boolean isBeautyEnable;
+
+    // camera
+    Camera2Manager mCamera2Manager;
+    DeviceOrientationLiveData deviceOrientationLiveData;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         StatueBarUtils.setStatusBarOrScreenStatus(this);
-        if (!Utils.isTablet(this)) {
-            setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED);
-        }
         setContentView(R.layout.activity_gl_camera2_surface_view);
         Log.d(TAG, "onCreate: ");
         initView();
-        initListener();
 
         mRenderManager = new RenderManager();
-        initCameraManager();
+        mCamera2Manager = new Camera2Manager(this);
+        deviceOrientationLiveData = new DeviceOrientationLiveData(this);
+        deviceOrientationLiveData.observe(this, deviceOrientation -> {
+            Log.d(TAG, "deviceOrientationLiveData : deviceOrientation = " + deviceOrientation);
+        });
+
+        int displayRotation = CameraUtils.getDisplayRotation(this);
+        Log.d(TAG, "onCreate : displayRotation = " + displayRotation);
+        mRenderManager.setDeviceRotation(displayRotation);
     }
 
     @Override
     protected void onResume() {
         super.onResume();
         Log.d(TAG, "onResume: ");
-        startBackgroundThread();
+        Camera2Manager.doOrPost(() -> {
+            String defaultCameraId = mCamera2Manager.getDefaultCameraId();
+            mCamera2Manager.initCamera(defaultCameraId, mDesiredPreviewSize);
+            configOutPutSurface();
+            mCamera2Manager.openCamera();
+        });
+
     }
 
     @Override
     protected void onPause() {
         super.onPause();
         Log.d(TAG, "onPause: ");
-        closeCamera();
-        stopBackgroundThread();
-
+        mCamera2Manager.closeCamera();
         mRenderManager.destroy();
     }
 
@@ -117,22 +90,12 @@ public class GLCamera2SurfaceViewActivity extends AppCompatActivity implements S
     @Override
     public void onConfigurationChanged(@NonNull Configuration newConfig) {
         super.onConfigurationChanged(newConfig);
-        Log.d(TAG, "onConfigurationChanged: ");
-
-        Size layoutSize = CameraUtils.findBestLayoutSize(this, mPreviewSize);
-        FrameLayout.LayoutParams params = (FrameLayout.LayoutParams) mSurfaceView.getLayoutParams();
-        params.width = (int) layoutSize.getWidth();
-        params.height = (int) layoutSize.getHeight();
-        params.gravity = Gravity.CENTER;
-
-
-        if (Utils.isTablet(this)) {
-            Integer dataValue = orientationLiveData.getValue();
-            if (dataValue != null) {
-                mRenderManager.setRotation(dataValue);
-            }
-        }
-
+        int displayRotation = CameraUtils.getDisplayRotation(this);
+        Log.d(TAG, "onConfigurationChanged : displayRotation = " + displayRotation);
+        mRenderManager.setDeviceRotation(displayRotation);
+        mSurfaceView.post(() -> {
+            resizeSurfaceView(mSurfaceView);
+        });
     }
 
     public void onClick(View view) {
@@ -141,116 +104,23 @@ public class GLCamera2SurfaceViewActivity extends AppCompatActivity implements S
             handleFilter();
         } else if (id == R.id.btn_beauty) {
             handleBeauty();
+        } else if (id == R.id.btn_take_switch) {
+            handSwitch();
         }
     }
-
 
     private void initView() {
         mSurfaceView = findViewById(R.id.surface_container);
         mSurfaceView.getHolder().addCallback(this);
+        resizeSurfaceView(mSurfaceView);
     }
 
-    private void initListener() {
-
-    }
-
-    private void initCameraManager() {
-        manager = (CameraManager) getSystemService(Context.CAMERA_SERVICE);
-        try {
-            String[] cameraIdList = manager.getCameraIdList();
-            if (cameraIdList.length > 0) {
-                initCameraConfig(cameraIdList[1]);
-            } else {
-                throw new CameraAccessException(CameraAccessException.CAMERA_ERROR, "No camera available");
-            }
-        } catch (CameraAccessException e) {
-            Log.e(TAG, "initCameraManager: " + e);
-            this.finish();
-        }
-    }
-
-    private void initCameraConfig(String cameraId) throws CameraAccessException {
-        CameraCharacteristics characteristics = manager.getCameraCharacteristics(cameraId);
-        StreamConfigurationMap map = characteristics.get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP);
-        if (map != null) {
-            mPreviewSize = CameraUtils.chooseOptimalSize(map.getOutputSizes(SurfaceTexture.class), mDesiredPreviewSize);
-            Log.d(TAG, "initCameraConfig chooseOptimalSize: width = " + mPreviewSize.getWidth() + ",height = " + mPreviewSize.getHeight());
-            mCameraId = cameraId;
-            mSurfaceView.setAspectRatio(mPreviewSize.getWidth(), mPreviewSize.getHeight());
-            Size layoutSize = CameraUtils.findBestLayoutSize(this, mPreviewSize);
-            FrameLayout.LayoutParams params = (FrameLayout.LayoutParams) mSurfaceView.getLayoutParams();
-            params.width = layoutSize.getWidth();
-            params.height = layoutSize.getHeight();
-            params.gravity = Gravity.CENTER;
-            orientationLiveData = new OrientationLiveData(this, characteristics);
-            orientationLiveData.observe(this, integer -> {
-                Log.d(TAG, "orientationLiveData orientation = " + integer);
-                if (!isConfigOrientated) {
-                    mRenderManager.setRotation(integer);
-                    isConfigOrientated = true;
-                }
-            });
-        }
-    }
-
-    private void startBackgroundThread() {
-        mBackgroundThread = new HandlerThread("CameraBackground");
-        mBackgroundThread.start();
-        mBackgroundHandler = new Handler(mBackgroundThread.getLooper());
-
-
-    }
-
-    private void stopBackgroundThread() {
-        mBackgroundThread.quitSafely();
-        try {
-            mBackgroundThread.join();
-            mBackgroundThread = null;
-            mBackgroundHandler = null;
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
-    }
-
-    private void setUpOutputSurfaces() {
-        Log.d(TAG, "setUpOutputSurfaces: preview width = " + mPreviewSize.getWidth() + ",height = " + mPreviewSize.getHeight());
-        mRenderManager.setup(mPreviewSize.getWidth(), mPreviewSize.getHeight());
-        mRenderManager.startPreview(mPreviewSurface);
-    }
-
-    private void openCamera() {
-        try {
-            if (!mCameraOpenCloseLock.tryAcquire(2500, TimeUnit.MILLISECONDS)) {
-                throw new RuntimeException("Time out waiting to lock camera opening.");
-            }
-            if (ActivityCompat.checkSelfPermission(GLCamera2SurfaceViewActivity.this, Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
-                return;
-            }
-            manager.openCamera(mCameraId, mStateCallback, mBackgroundHandler);
-        } catch (CameraAccessException e) {
-            e.printStackTrace();
-        } catch (InterruptedException e) {
-            throw new RuntimeException("Interrupted while trying to lock camera opening.", e);
-        }
-
-    }
-
-    private void closeCamera() {
-        try {
-            mCameraOpenCloseLock.acquire();
-            if (null != mCaptureSession) {
-                mCaptureSession.stopRepeating();
-                mCaptureSession.close();
-                mCaptureSession = null;
-            }
-            if (null != mCameraDevice) {
-                mCameraDevice.close();
-                mCameraDevice = null;
-            }
-        } catch (Exception e) {
-            Log.e(TAG, "closeCamera: " + e);
-        } finally {
-            mCameraOpenCloseLock.release();
+    private void handSwitch() {
+        String nextCameraId = mCamera2Manager.getNextCameraId();
+        if (nextCameraId != null) {
+            mCamera2Manager.initCamera(nextCameraId, mDesiredPreviewSize);
+            configOutPutSurface();
+            mCamera2Manager.switchCamera();
         }
     }
 
@@ -262,99 +132,39 @@ public class GLCamera2SurfaceViewActivity extends AppCompatActivity implements S
         mRenderManager.enableBeauty(isBeautyEnable = !isBeautyEnable);
     }
 
-
-    private final CameraDevice.StateCallback mStateCallback = new CameraDevice.StateCallback() {
-        @Override
-        public void onOpened(CameraDevice cameraDevice) {
-            Log.d(TAG, "Camera onOpened: " + cameraDevice.getId());
-            // This method is called when the camera is opened.  We start camera preview here.
-            mCameraOpenCloseLock.release();
-            mCameraDevice = cameraDevice;
-            createCameraPreviewSession();
-        }
-
-        @Override
-        public void onDisconnected(CameraDevice cameraDevice) {
-            Log.d(TAG, "Camera onDisconnected: " + cameraDevice.getId());
-            mCameraOpenCloseLock.release();
-            cameraDevice.close();
-            mCameraDevice = null;
-        }
-
-        @Override
-        public void onError(CameraDevice cameraDevice, int error) {
-            Log.d(TAG, "Camera onError: " + cameraDevice.getId() + ",error = " + error);
-            mCameraOpenCloseLock.release();
-            cameraDevice.close();
-            mCameraDevice = null;
-            finish();
-        }
-    };
-
-    private void createCameraPreviewSession() {
-        try {
-            Log.d(TAG, "createCameraPreviewSession: ");
-            CompletableFuture<SurfaceTexture> future = mRenderManager.getSurfaceTexture();
-            SurfaceTexture texture = future.get();
-            texture.setDefaultBufferSize(mPreviewSize.getWidth(), mPreviewSize.getHeight());
-            texture.setOnFrameAvailableListener(this);
-            Surface surface = new Surface(texture);
-            mPreviewRequestBuilder = mCameraDevice.createCaptureRequest(CameraDevice.TEMPLATE_PREVIEW);
-            mPreviewRequestBuilder.addTarget(surface);
-            mCameraDevice.createCaptureSession(Arrays.asList(surface), new CameraCaptureSession.StateCallback() {
-                @Override
-                public void onConfigured(@NonNull CameraCaptureSession session) {
-                    Log.d(TAG, "Camera onConfigured: ");
-                    if (null == mCameraDevice) {
-                        return;
-                    }
-                    mCaptureSession = session;
-                    // Auto focus
-                    mPreviewRequestBuilder.set(CaptureRequest.CONTROL_AF_MODE, CaptureRequest.CONTROL_AF_MODE_CONTINUOUS_PICTURE);
-                    // Auto Flash
-                    mPreviewRequestBuilder.set(CaptureRequest.CONTROL_AE_MODE, CaptureRequest.CONTROL_AE_MODE_ON_AUTO_FLASH);
-
-                    CaptureRequest captureRequest = mPreviewRequestBuilder.build();
-                    try {
-                        mCaptureSession.setRepeatingRequest(captureRequest, mCaptureCallback, mBackgroundHandler);
-                    } catch (CameraAccessException e) {
-                        throw new RuntimeException(e);
-                    }
-                    if (Utils.isTablet(GLCamera2SurfaceViewActivity.this) && orientationLiveData.getValue() != null) {
-                        mRenderManager.setRotation(orientationLiveData.getValue());
-                    }
-                }
-
-                @Override
-                public void onConfigureFailed(@NonNull CameraCaptureSession session) {
-                    Log.d(TAG, "Camera onConfigureFailed: " + mCameraId);
-
-                }
-            }, null);
-
-        } catch (CameraAccessException | ExecutionException | InterruptedException e) {
-            throw new RuntimeException(e);
-        }
+    private void setUpOutputSurfaces(int width, int height) {
+        Log.d(TAG, "setUpOutputSurfaces: preview width = " + width + ",height = " + height);
+        mRenderManager.setup(width, height);
+        mRenderManager.startPreview(mPreviewSurface);
     }
 
-    private final CameraCaptureSession.CaptureCallback mCaptureCallback = new CameraCaptureSession.CaptureCallback() {
-
-        private void process(CaptureResult result) {
-
+    private void configOutPutSurface() {
+        CompletableFuture<SurfaceTexture> completableFuture = mRenderManager.getSurfaceTexture();
+        SurfaceTexture surfaceTexture = null;
+        try {
+            surfaceTexture = completableFuture.get(5, TimeUnit.SECONDS);
+        } catch (Exception e) {
+            Log.d(TAG, "future.get: " + e);
         }
-
-        @Override
-        public void onCaptureProgressed(CameraCaptureSession session, CaptureRequest request,
-                                        CaptureResult partialResult) {
-            process(partialResult);
+        if (surfaceTexture == null) {
+            Log.d(TAG, "surfaceTexture == null");
+            return;
         }
+        Size previewSize = mCamera2Manager.getPreviewSize();
+        surfaceTexture.setDefaultBufferSize(previewSize.getWidth(), previewSize.getHeight());
+        surfaceTexture.setOnFrameAvailableListener(this);
+        Surface surface = new Surface(surfaceTexture);
+        mCamera2Manager.setSurfaceFuture(surface);
 
-        @Override
-        public void onCaptureCompleted(CameraCaptureSession session, CaptureRequest request,
-                                       TotalCaptureResult result) {
-            process(result);
-        }
-    };
+    }
+
+    private void resizeSurfaceView(View surfaceView) {
+        Size layoutSize = CameraUtils.findBestLayoutSize(this, mDesiredPreviewSize);
+        FrameLayout.LayoutParams params = (FrameLayout.LayoutParams) surfaceView.getLayoutParams();
+        params.width = layoutSize.getWidth();
+        params.height = layoutSize.getHeight();
+        params.gravity = Gravity.CENTER;
+    }
 
     @Override
     public void onFrameAvailable(SurfaceTexture surfaceTexture) {
@@ -364,15 +174,18 @@ public class GLCamera2SurfaceViewActivity extends AppCompatActivity implements S
     @Override
     public void surfaceCreated(@NonNull SurfaceHolder holder) {
         Log.d(TAG, "surfaceCreated: ");
-        mPreviewSurface = holder.getSurface();
-        setUpOutputSurfaces();
-        openCamera();
     }
 
     @Override
     public void surfaceChanged(@NonNull SurfaceHolder holder, int format, int width, int height) {
         Log.d(TAG, "surfaceChanged: size = " + width + "x" + height + ", fmt = " + format);
-        mRenderManager.setResolution(width, height);
+        if (mPreviewSurface != holder.getSurface()) {
+            mPreviewSurface = holder.getSurface();
+            setUpOutputSurfaces(width, height);
+        } else {
+            mRenderManager.setSurfaceSize(width, height);
+        }
+
     }
 
     @Override

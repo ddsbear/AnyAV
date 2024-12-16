@@ -1,13 +1,16 @@
 package com.dds.base.camera;
 
+import android.app.Activity;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Matrix;
+import android.hardware.display.DisplayManager;
 import android.os.Environment;
 import android.util.DisplayMetrics;
 import android.util.Log;
 import android.util.Size;
+import android.view.Surface;
 
 import java.io.BufferedOutputStream;
 import java.io.File;
@@ -152,5 +155,26 @@ public class CameraUtils {
         }
     }
 
+
+    public static int getDisplayRotation(Context context) {
+        DisplayManager dm = (DisplayManager) context.getSystemService(Context.DISPLAY_SERVICE);
+        android.view.Display defaultDisplay = dm.getDisplay(android.view.Display.DEFAULT_DISPLAY);
+        int rotation = defaultDisplay.getRotation();
+        return getDisplayRotationByDeviceOrientation(rotation);
+    }
+
+    public static int getDisplayRotationByDeviceOrientation(int deviceOrientation) {
+        switch (deviceOrientation) {
+            case Surface.ROTATION_90:
+                return 90;
+            case Surface.ROTATION_180:
+                return 180;
+            case Surface.ROTATION_270:
+                return 270;
+            case Surface.ROTATION_0:
+            default:
+                return 0;
+        }
+    }
 
 }

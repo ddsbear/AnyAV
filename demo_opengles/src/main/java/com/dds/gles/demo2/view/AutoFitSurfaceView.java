@@ -1,6 +1,7 @@
 package com.dds.gles.demo2.view;
 
 import android.content.Context;
+import android.content.res.Configuration;
 import android.util.AttributeSet;
 import android.view.SurfaceView;
 
@@ -54,4 +55,8 @@ public class AutoFitSurfaceView extends SurfaceView {
         }
     }
 
+    @Override
+    protected void onConfigurationChanged(Configuration newConfig) {
+        super.onConfigurationChanged(newConfig);
+    }
 }

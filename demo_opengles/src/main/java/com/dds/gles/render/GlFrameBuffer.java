@@ -72,6 +72,7 @@ public class GlFrameBuffer {
         GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, frameBufferId);
         GLES20.glFramebufferTexture2D(
                 GLES20.GL_FRAMEBUFFER, GLES20.GL_COLOR_ATTACHMENT0, GLES20.GL_TEXTURE_2D, textureId, 0);
+        GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, 0);
 
         // Check that the framebuffer is in a good state.
         final int status = GLES20.glCheckFramebufferStatus(GLES20.GL_FRAMEBUFFER);
@@ -79,7 +80,7 @@ public class GlFrameBuffer {
             throw new IllegalStateException("Framebuffer not complete, status: " + status);
         }
 
-        GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, 0);
+
     }
 
     public int getWidth() {

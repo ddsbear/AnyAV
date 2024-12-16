@@ -1,6 +1,7 @@
 package com.dds.gles.demo2.render.filter;
 
 import android.opengl.GLES20;
+import android.opengl.Matrix;
 
 import com.dds.gles.demo2.render.BaseTextureRender;
 import com.dds.gles.render.GlShader;
@@ -24,17 +25,21 @@ public class SkinSmoothFilter {
         this.stepScale = stepScale;
     }
 
-    public void draw(float[] mSTMatrix, int mWidth, int mHeight) {
+    public void draw(int textureId, float[] mSTMatrix, int mWidth, int mHeight) {
 
         shader.useProgram();
 
-
-        GLES20.glUniformMatrix4fv(shader.getUniformLocation("tex_mat"), 1, false, mSTMatrix, 0);
-
-        GLES20.glUniform1i(shader.getUniformLocation("sTexture"), 0);
+        Matrix.setIdentityM(mSTMatrix, 0);
 
         GLES20.glUniform1f(xStepLoc, stepScale / mWidth);
         GLES20.glUniform1f(yStepLoc, stepScale / mHeight);
+
+        GLES20.glUniformMatrix4fv(shader.getUniformLocation("tex_mat"), 1, false, mSTMatrix, 0);
+
+        GLES20.glActiveTexture(GLES20.GL_TEXTURE0);
+        GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, textureId);
+        GLES20.glUniform1i(shader.getUniformLocation("sTexture"), 0);
+
 
         GLES20.glDrawArrays(GLES20.GL_TRIANGLE_STRIP, 0, 4);
 

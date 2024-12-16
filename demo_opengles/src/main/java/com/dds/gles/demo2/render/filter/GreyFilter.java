@@ -17,12 +17,16 @@ public class GreyFilter {
 
     }
 
-    public void draw(float[] mSTMatrix) {
+    public void draw(int textureId, float[] mSTMatrix) {
 
         shader.useProgram();
 
+        Matrix.setIdentityM(mSTMatrix, 0);
+
         GLES20.glUniformMatrix4fv(shader.getUniformLocation("tex_mat"), 1, false, mSTMatrix, 0);
 
+        GLES20.glActiveTexture(GLES20.GL_TEXTURE0);
+        GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, textureId);
         GLES20.glUniform1i(shader.getUniformLocation("sTexture"), 0);
 
         GLES20.glDrawArrays(GLES20.GL_TRIANGLE_STRIP, 0, 4);

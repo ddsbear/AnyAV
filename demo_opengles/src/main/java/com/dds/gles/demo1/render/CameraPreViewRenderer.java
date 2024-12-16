@@ -12,6 +12,7 @@ import android.opengl.GLSurfaceView;
 import android.opengl.Matrix;
 import android.util.Log;
 import android.util.Size;
+import android.view.Surface;
 
 
 import com.dds.gles.render.GLESTool;
@@ -54,7 +55,9 @@ public class CameraPreViewRenderer implements GLSurfaceView.Renderer {
     int mWidth;
     int mHeight;
 
-    public CompletableFuture<SurfaceTexture> getCompletableFuture() {
+    private boolean isFront;
+
+    public CompletableFuture<SurfaceTexture> getSurfaceFuture() {
         return completableFuture;
     }
 
@@ -63,6 +66,10 @@ public class CameraPreViewRenderer implements GLSurfaceView.Renderer {
         bCoordinate = GLESTool.createFloatBuffer(sCoordinate);
         completableFuture = new CompletableFuture<>();
         mBuferSize = mPreviewSize;
+    }
+
+    public void setFront(boolean front) {
+        isFront = front;
     }
 
     public void enableFilter(boolean enable) {
@@ -85,10 +92,8 @@ public class CameraPreViewRenderer implements GLSurfaceView.Renderer {
         frameBuffer = new GlFrameBuffer(GLES20.GL_RGBA);
         frameBuffer.allocateBuffers(mBuferSize.getWidth(), mBuferSize.getHeight());
 
-
+        surfaceTexture.setDefaultBufferSize(mBuferSize.getWidth(), mBuferSize.getHeight());
         completableFuture.complete(surfaceTexture);
-
-
     }
 
     @Override
@@ -108,6 +113,7 @@ public class CameraPreViewRenderer implements GLSurfaceView.Renderer {
         // clear
         GLES20.glClearColor(0, 0, 0, 0);
         GLES20.glClear(GLES20.GL_DEPTH_BUFFER_BIT | GLES20.GL_COLOR_BUFFER_BIT);
+
 
         // use program
         shader.useProgram();
@@ -145,8 +151,12 @@ public class CameraPreViewRenderer implements GLSurfaceView.Renderer {
 
             GLES20.glViewport(0, 0, mWidth, mHeight);
 
-            Matrix.translateM(mMVPMatrix, 0, 0f, 1f, 0);
-            Matrix.rotateM(mMVPMatrix, 0, 90, 0, 0, 1);
+            if (isFront) {
+                GLESTool.rotateMatrix(mMVPMatrix, 90);
+            } else {
+                GLESTool.rotateMatrix(mMVPMatrix, 90);
+                GLESTool.flipMatrix(mMVPMatrix, true, false);
+            }
 
             // use program
             shaderFbo.useProgram();

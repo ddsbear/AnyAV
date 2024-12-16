@@ -26,9 +26,14 @@ public class GlTextureRenderer extends BaseTextureRender {
     private GlShader mGLShader;
     private ShaderType mCurrentShaderType;
     private GlShader mCurrentShader;
+    private int mDisplayRotation;
 
     public GlTextureRenderer() {
         super();
+    }
+
+    public void setDisplayRotation(int displayRotation) {
+        mDisplayRotation = displayRotation;
     }
 
     public void prepareShader(ShaderType shaderType) {
@@ -56,13 +61,13 @@ public class GlTextureRenderer extends BaseTextureRender {
 
         GLES20.glViewport(viewportX, viewportY, viewportWidth, viewportHeight);
 
-        GLES20.glClearColor(1.0f, 0.0f, 0.0f, 1.0f);
+        GLES20.glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
         GLES20.glClear(GLES20.GL_DEPTH_BUFFER_BIT | GLES20.GL_COLOR_BUFFER_BIT);
 
         mGLShader.useProgram();
 
         // bindTexture
-        GLES20.glActiveTexture(GLES20.GL_TEXTURE1);
+        GLES20.glActiveTexture(GLES20.GL_TEXTURE0);
         GLES20.glBindTexture(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, textureId);
 
         FloatBuffer triangleVertices = mRegularTriangleVertices;
@@ -94,7 +99,7 @@ public class GlTextureRenderer extends BaseTextureRender {
     }
 
     public void drawRgbTexture(int textureId, float[] mTexMatrix, int viewportX, int viewportY,
-                               int viewportWidth, int viewportHeight) {
+                               int viewportWidth, int viewportHeight, int sensorRotation) {
         if (mGLShader == null) {
             Log.w(TAG, "drawTexture: not fire prepareShader");
             return;
@@ -104,10 +109,13 @@ public class GlTextureRenderer extends BaseTextureRender {
 
         mGLShader.useProgram();
 
-        GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, 0);
+
+        Matrix.setIdentityM(mTexMatrix, 0);
 
 
-        Matrix.setIdentityM(mTexMatrix,0);
+        Matrix.translateM(mTexMatrix, 0, 0.5f, 0.5f, 0);
+        Matrix.rotateM(mTexMatrix, 0, (360 - mDisplayRotation) % 360, 0.0f, 0.0f, 1.0f);
+        Matrix.translateM(mTexMatrix, 0, -0.5f, -0.5f, 0);
 
         // bindTexture
         GLES20.glActiveTexture(GLES20.GL_TEXTURE0);

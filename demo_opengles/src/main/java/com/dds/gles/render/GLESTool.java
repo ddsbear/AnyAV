@@ -6,6 +6,7 @@ import android.opengl.GLES20;
 import android.opengl.GLES30;
 import android.opengl.GLException;
 import android.opengl.GLUtils;
+import android.opengl.Matrix;
 import android.util.Log;
 
 import java.nio.ByteBuffer;
@@ -129,4 +130,31 @@ public class GLESTool {
         }
         return program;
     }
+
+    /**
+     * 对矩阵进行旋转操作
+     *
+     * @param matrix 矩阵数组
+     * @param degree 旋转角度
+     */
+    public static void rotateMatrix(float[] matrix, int degree) {
+        Matrix.translateM(matrix, 0, 0.5f, 0.5f, 0);
+        Matrix.rotateM(matrix, 0, degree, 0, 0, 1);
+        Matrix.translateM(matrix, 0, -0.5f, -0.5f, 0);
+    }
+
+    /**
+     * 对矩阵进行缩放操作
+     *
+     * @param matrix 矩阵数组
+     * @param x 沿着x轴缩放
+     * @param y 沿着y轴缩放
+     */
+    public static void flipMatrix(float[] matrix, boolean x, boolean y) {
+        Matrix.translateM(matrix, 0, 0.5f, 0.5f, 0);
+        Matrix.scaleM(matrix, 0, x ? -1 : 1, y ? -1 : 1, 1);
+        Matrix.translateM(matrix, 0, -0.5f, -0.5f, 0);
+    }
+
+
 }

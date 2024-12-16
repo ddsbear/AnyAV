@@ -8,7 +8,6 @@ import android.opengl.EGLDisplay;
 import android.opengl.EGLExt;
 import android.opengl.EGLSurface;
 import android.opengl.GLES20;
-import android.opengl.Matrix;
 import android.os.Handler;
 import android.os.HandlerThread;
 import android.os.Looper;
@@ -26,7 +25,7 @@ import com.dds.gles.render.GlFrameBuffer;
 import java.util.concurrent.CompletableFuture;
 
 public class RenderManager {
-    private static final String TAG = "RenderManager";
+    private static final String TAG = "dds_RenderManager";
     private final HandlerThread mGLHandlerThread;
     private final GLHandler mHandler;
 
@@ -60,17 +59,24 @@ public class RenderManager {
 
     }
 
-    public void setRotation(int rotation) {
+    public void setDeviceRotation(int rotation) {
         synchronized (syncOp) {
-            mHandler.removeMessages(GLHandler.MSG_ROTATION);
-            mHandler.sendMessage(mHandler.obtainMessage(GLHandler.MSG_ROTATION, rotation, 0));
+            mHandler.removeMessages(GLHandler.MSG_DEVICE_ROTATION);
+            mHandler.sendMessage(mHandler.obtainMessage(GLHandler.MSG_DEVICE_ROTATION, rotation, 0));
         }
     }
 
-    public void setResolution(int width, int height) {
+    public void setSensorRotation(int rotation) {
         synchronized (syncOp) {
-            mHandler.removeMessages(GLHandler.MSG_RESOLUTION);
-            mHandler.sendMessage(mHandler.obtainMessage(GLHandler.MSG_RESOLUTION, width, height));
+            mHandler.removeMessages(GLHandler.MSG_SENSOR_ROTATION);
+            mHandler.sendMessage(mHandler.obtainMessage(GLHandler.MSG_SENSOR_ROTATION, rotation, 0));
+        }
+    }
+
+    public void setSurfaceSize(int width, int height) {
+        synchronized (syncOp) {
+            mHandler.removeMessages(GLHandler.MSG_SURFACE_SIZE);
+            mHandler.sendMessage(mHandler.obtainMessage(GLHandler.MSG_SURFACE_SIZE, width, height));
         }
     }
 
@@ -115,27 +121,36 @@ public class RenderManager {
     }
 
     private static class GLHandler extends Handler {
-
         static final int MSG_SETUP = 0x01;
         static final int MSG_DRAW_FRAME = 0x02;
         static final int MSG_PREVIEW = 0x03;
-        static final int MSG_ROTATION = 0x04;
-        static final int MSG_RESOLUTION = 0x05;
+        static final int MSG_DEVICE_ROTATION = 0x04;
+        static final int MSG_SURFACE_SIZE = 0x05;
         static final int MSG_RELEASE = 0x06;
         static final int MSG_FILTER = 0x07;
         static final int MSG_BEAUTY = 0x08;
+        static final int MSG_SENSOR_ROTATION = 0x09;
 
         private EGLDisplay mEGLDisplay = EGL14.EGL_NO_DISPLAY;
         private EGLConfig mConfig;
         private EGLContext mEGLContext = EGL14.EGL_NO_CONTEXT;
         private EGLSurface mStubEglSurface;
         private int mTextureID;
-        private GlFrameBuffer mFrameBuffer;
 
         public volatile SurfaceTexture mSurfaceTexture;
         private final CompletableFuture<SurfaceTexture> mSurfaceFuture;
         private GlTextureRenderer mGlTextureRenderer;
+
+        private GlFrameBuffer mFrameBuffer;
         private GlTextureRenderer mRGBTextureRenderer;
+
+        private GlFrameBuffer mFrameBuffer1;
+        private GlFrameBuffer mFrameBuffer2;
+
+        private int mBufferWidth;
+        private int mBufferHeight;
+        private int mDeviceRotation;
+        private int mSensorRotation;
 
         private int mWidth;
         private int mHeight;
@@ -172,17 +187,20 @@ public class RenderManager {
                     Surface surface = (Surface) msg.obj;
                     handleStartPreview(surface);
                     break;
-                case MSG_ROTATION:
-                    handleSetRotation(msg.arg1);
+                case MSG_DEVICE_ROTATION:
+                    handleSetDeviceRotation(msg.arg1);
                     break;
-                case MSG_RESOLUTION:
-                    handleSetResolution(msg.arg1, msg.arg2);
+                case MSG_SURFACE_SIZE:
+                    handleSetSurfaceSize(msg.arg1, msg.arg2);
                     break;
                 case MSG_FILTER:
                     handleEnableFilter(msg.arg1);
                     break;
                 case MSG_BEAUTY:
                     handleEnableBeauty(msg.arg1);
+                    break;
+                case MSG_SENSOR_ROTATION:
+                    handleSetSensorRotation(msg.arg1);
                     break;
                 default:
                     break;
@@ -262,6 +280,10 @@ public class RenderManager {
         }
 
         private void handleSetup(int width, int height) {
+            mBufferWidth = width;
+            mBufferHeight = height;
+            mWidth = mBufferWidth;
+            mHeight = mBufferHeight;
             // createTexture
             mTextureID = GLESTool.createOESTexture();
             // new SurfaceTexture
@@ -271,8 +293,16 @@ public class RenderManager {
 
             if (sUseFbo) {
                 mRGBTextureRenderer = new GlTextureRenderer();
+                mRGBTextureRenderer.setDisplayRotation(mDeviceRotation);
                 mFrameBuffer = new GlFrameBuffer(GLES20.GL_RGBA);
                 mFrameBuffer.allocateBuffers(width, height);
+
+                mFrameBuffer1 = new GlFrameBuffer(GLES20.GL_RGBA);
+                mFrameBuffer1.allocateBuffers(width, height);
+
+                mFrameBuffer2 = new GlFrameBuffer(GLES20.GL_RGBA);
+                mFrameBuffer2.allocateBuffers(width, height);
+
                 filter = new GreyFilter();
                 smoothFilter = new SkinSmoothFilter();
             }
@@ -296,12 +326,13 @@ public class RenderManager {
         }
 
         private void handleDrawFrame() {
-            if (mHeight == 0 || mWidth == 0) {
+            if (mBufferHeight == 0 || mBufferWidth == 0) {
                 return;
             }
-            mSurfaceTexture.updateTexImage();
-            // eglMakeCurrent
+
             EGL14.eglMakeCurrent(mEGLDisplay, previewEglSurface, previewEglSurface, mEGLContext);
+
+            mSurfaceTexture.updateTexImage();
             // glClear
             GLES20.glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
 
@@ -311,36 +342,65 @@ public class RenderManager {
             // draw
             float[] mSTMatrix = new float[16];
             mSurfaceTexture.getTransformMatrix(mSTMatrix);
+
             mGlTextureRenderer.prepareShader(GlTextureRenderer.ShaderType.OES);
-            mGlTextureRenderer.drawOesTexture(mTextureID, mSTMatrix, 0, 0, mWidth, mHeight);
+            mGlTextureRenderer.drawOesTexture(mTextureID, mSTMatrix, 0, 0, mBufferWidth, mBufferHeight);
 
             if (sUseFbo) {
                 mFrameBuffer.unbind();
-                mRGBTextureRenderer.prepareShader(GlTextureRenderer.ShaderType.RGB);
-                mRGBTextureRenderer.drawRgbTexture(mFrameBuffer.getTextureId(), mSTMatrix, 0, 0, mWidth, mHeight);
 
-                if (isBeautyEnable) {
-                    smoothFilter.prepare();
-                    smoothFilter.draw(mSTMatrix, mWidth, mHeight);
-                }
+                int showTextureId = mFrameBuffer.getTextureId();
 
                 if (isFilterEnable) {
+                    mFrameBuffer1.bind();
                     filter.prepare();
-                    filter.draw(mSTMatrix);
+                    filter.draw(showTextureId, mSTMatrix);
+                    mFrameBuffer1.unbind();
+                    showTextureId = mFrameBuffer1.getTextureId();
                 }
+
+                if (isBeautyEnable) {
+                    mFrameBuffer2.bind();
+                    smoothFilter.prepare();
+                    smoothFilter.draw(showTextureId, mSTMatrix, mFrameBuffer.getWidth(), mFrameBuffer.getHeight());
+                    mFrameBuffer2.unbind();
+                    showTextureId = mFrameBuffer2.getTextureId();
+                }
+
+                mRGBTextureRenderer.prepareShader(GlTextureRenderer.ShaderType.RGB);
+                mRGBTextureRenderer.drawRgbTexture(showTextureId, mSTMatrix, 0, 0, mWidth, mHeight, mSensorRotation);
             }
+
             // eglSwapBuffers
             EGL14.eglSwapBuffers(mEGLDisplay, previewEglSurface);
 
         }
 
-        private void handleSetRotation(int rotation) {
-
+        private void handleSetDeviceRotation(int deviceRotation) {
+            mDeviceRotation = deviceRotation;
+            if (mRGBTextureRenderer != null) {
+                mRGBTextureRenderer.setDisplayRotation(mDeviceRotation);
+            }
         }
 
-        private void handleSetResolution(int width, int height) {
+        private void handleSetSurfaceSize(int width, int height) {
+            if (width == 0 || height == 0) {
+                return;
+            }
             this.mWidth = width;
             this.mHeight = height;
+        }
+
+        private void handleEnableFilter(int arg1) {
+            isFilterEnable = arg1 == 1;
+        }
+
+        private void handleEnableBeauty(int arg1) {
+            isBeautyEnable = arg1 == 1;
+        }
+
+        private void handleSetSensorRotation(int sensorRotation) {
+            mSensorRotation = sensorRotation;
         }
 
         private void releaseEGLContext() {
@@ -379,13 +439,6 @@ public class RenderManager {
             }
         }
 
-        private void handleEnableFilter(int arg1) {
-            isFilterEnable = arg1 == 1;
-        }
-
-        private void handleEnableBeauty(int arg1) {
-            isBeautyEnable = arg1 == 1;
-        }
     }
 
 }

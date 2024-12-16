@@ -15,9 +15,9 @@ public class BaseTextureRender {
     protected static final float[] sRegularTriangleVertices = {
             // X,   Y,     Z, U,   V
             -1.0f, -1.0f, 0, 0.f, 0.f,    // left  bottom
-            1.0f, -1.0f, 0, 1.f, 0.f,    // right bottom
-            -1.0f, 1.0f, 0, 0.f, 1.f,    // left top
-            1.0f, 1.0f, 0, 1.f, 1.f,    // right top
+            1.0f, -1.0f, 0, 1.f, 0.f,     // right bottom
+            -1.0f, 1.0f, 0, 0.f, 1.f,     // left top
+            1.0f, 1.0f, 0, 1.f, 1.f,      // right top
     };
     // Sampling is mirrored across the horizontal axis
     protected static final float[] sHorizontalFlipTriangleVertices = {

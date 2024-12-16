@@ -1,19 +1,18 @@
 package com.dds.gles.demo2;
 
 import android.content.Context;
-import android.hardware.camera2.CameraCharacteristics;
 import android.util.Log;
 import android.view.OrientationEventListener;
 import android.view.Surface;
 
 import androidx.lifecycle.LiveData;
 
-public class OrientationLiveData extends LiveData<Integer> {
+public class DeviceOrientationLiveData extends LiveData<Integer> {
     private static final String TAG = "OrientationLiveData";
     private final Context mContext;
     private final OrientationEventListener listener;
 
-    public OrientationLiveData(Context context, CameraCharacteristics characteristics) {
+    public DeviceOrientationLiveData(Context context) {
         mContext = context;
         listener = new OrientationEventListener(mContext.getApplicationContext()) {
             @Override
@@ -23,15 +22,9 @@ public class OrientationLiveData extends LiveData<Integer> {
                                 (orientation <= 225 ? Surface.ROTATION_180 :
                                         (orientation <= 315 ? Surface.ROTATION_270 : 0)));
 
-                Integer relative = computeRelativeRotation(characteristics, rotation);
+                Integer relative = computeDeviceRotation(rotation);
                 Integer value = getValue();
-                boolean isChange = true;
-                if (value != null) {
-                    int dist = Math.abs(relative - value);
-                    dist = Math.min(dist, 360 - dist);
-                    isChange = dist >= 68;
-                }
-                if (!relative.equals(value) && isChange) {
+                if (!relative.equals(value)) {
                     Log.d(TAG, "onOrientationChanged: postValue " + relative);
                     postValue(relative);
                 }
@@ -49,9 +42,7 @@ public class OrientationLiveData extends LiveData<Integer> {
         listener.disable();
     }
 
-    private int computeRelativeRotation(CameraCharacteristics characteristics, int surfaceRotation) {
-        Integer integer = characteristics.get(CameraCharacteristics.SENSOR_ORIENTATION);
-        int sensorOrientationDegrees = integer == null ? 0 : integer;
+    private int computeDeviceRotation(int surfaceRotation) {
         int deviceOrientationDegrees = 0;
         switch (surfaceRotation) {
             case Surface.ROTATION_90:
@@ -64,11 +55,7 @@ public class OrientationLiveData extends LiveData<Integer> {
                 deviceOrientationDegrees = 270;
                 break;
         }
-        Integer integerLens = characteristics.get(CameraCharacteristics.LENS_FACING);
-        int sign = 1;
-        if (integerLens != null) {
-            sign = integerLens == CameraCharacteristics.LENS_FACING_FRONT ? 1 : -1;
-        }
-        return (sensorOrientationDegrees - (deviceOrientationDegrees * sign) + 360) % 360;
+
+        return deviceOrientationDegrees;
     }
 }

@@ -32,7 +32,9 @@
                 android:value="" />
         </activity>
         <activity android:name=".demo1.GLCamera2Activity" />
-        <activity android:name=".demo2.GLCamera2SurfaceViewActivity" />
+        <activity
+            android:name=".demo2.GLCamera2SurfaceViewActivity"
+            android:configChanges="orientation|screenSize|smallestScreenSize|screenLayout|uiMode" />
     </application>
 
 </manifest>

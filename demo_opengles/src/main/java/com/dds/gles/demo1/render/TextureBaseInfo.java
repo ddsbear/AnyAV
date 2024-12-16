@@ -1,7 +1,6 @@
 package com.dds.gles.demo1.render;
 
 public class TextureBaseInfo {
-    private static final String TAG = "ProgramUtil";
     // 顶点坐标
     public static final float[] sPosition = {
             -1.0f, 1.0f,    //left-up        1-------3
